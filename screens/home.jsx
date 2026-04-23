@@ -102,8 +102,9 @@ function HomeScreen({ theme, persona, go }) {
     .join(' ');
   const goalY = yFor(goalScore);
 
-  const GOLD = '#D49622';
-  const GOLD_SOFT = '#E5A83A';
+  // Keep gold reserved only for the tiny best dot on the sparkline, else monochrome.
+  const BEST_DOT = '#D49622';
+  const BEST_DOT_SOFT = '#E5A83A';
 
   // Display values (prefer real last round if available)
   const showScore = lastRound?.total ?? latest.score;
@@ -137,34 +138,27 @@ function HomeScreen({ theme, persona, go }) {
     }}>
       <style>{homeKeyframes}</style>
 
-      {/* ① LATEST ROUND — BEST is the hero, LATEST is secondary below */}
+      {/* ① SCORE — BEST as hero (monochrome), LATEST in a dedicated section below */}
       <div
         style={{ ...section(4), cursor: lastRound ? 'pointer' : 'default' }}
         onClick={lastRound ? () => reopenComplete(lastRound) : undefined}
       >
-        {label('LATEST ROUND', { paddingTop: 6 })}
+        {label('ベストスコア', { paddingTop: 6 })}
 
-        {/* Top row — BEST hero + sparkline */}
+        {/* BEST hero + sparkline */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginTop: 10 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{
-                fontFamily: FONT.mono, fontSize: 14, color: GOLD, fontWeight: 700,
-              }}>★</span>
-              <span style={{
-                fontFamily: FONT.mono, fontSize: 40, fontWeight: 400, letterSpacing: -1.4,
-                color: GOLD, lineHeight: 1,
+                fontFamily: FONT.mono, fontSize: 44, fontWeight: 400, letterSpacing: -1.6,
+                color: theme.text, lineHeight: 1,
               }}>{p.best}</span>
               <span style={{
-                fontFamily: FONT.mono, fontSize: 11, color: GOLD, fontWeight: 700,
-                letterSpacing: 0.6, marginLeft: 2,
-              }}>BEST</span>
-            </div>
-            <div style={{
-              fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
-              marginTop: 4, letterSpacing: 0.3,
-            }}>
-              ave. {avgScore.toFixed(1)}
+                fontFamily: FONT.mono, fontSize: 12,
+                color: theme.textSec, letterSpacing: 0.3,
+              }}>
+                ave. {avgScore.toFixed(1)}
+              </span>
             </div>
           </div>
           <div style={{ flex: 1, maxWidth: 180 }}>
@@ -197,7 +191,7 @@ function HomeScreen({ theme, persona, go }) {
                 );
               })}
 
-              {/* BEST — gold dot (slightly larger) */}
+              {/* BEST — subtle gold dot accent (only thing colored on the chart) */}
               {bestIdx >= 0 && (
                 <g style={{
                   transformOrigin: `${sparkPoints[bestIdx].x}px ${sparkPoints[bestIdx].y}px`,
@@ -205,7 +199,7 @@ function HomeScreen({ theme, persona, go }) {
                   animation: 'hmDotIn 400ms 1200ms both', opacity: 0,
                 }}>
                   <circle cx={sparkPoints[bestIdx].x} cy={sparkPoints[bestIdx].y} r={3.2}
-                    fill={GOLD_SOFT} stroke={GOLD} strokeWidth={0.8}/>
+                    fill={BEST_DOT_SOFT} stroke={BEST_DOT} strokeWidth={0.8}/>
                 </g>
               )}
 
@@ -222,55 +216,58 @@ function HomeScreen({ theme, persona, go }) {
             </svg>
           </div>
         </div>
+      </div>
 
-        {/* Bottom row — LATEST secondary info */}
+      {/* ①b LATEST ROUND — now its own section, subtle */}
+      <div
+        style={{ ...section(20), cursor: lastRound ? 'pointer' : 'default' }}
+        onClick={lastRound ? () => reopenComplete(lastRound) : undefined}
+      >
+        {label('LATEST ROUND')}
         <div style={{
-          display: 'flex', alignItems: 'baseline', gap: 8,
-          marginTop: 10, paddingTop: 10,
-          borderTop: `1px solid ${theme.border}`,
+          display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8,
         }}>
           <span style={{
-            fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
-            letterSpacing: 0.8, fontWeight: 600, textTransform: 'uppercase',
-          }}>Latest</span>
-          <span style={{
-            fontFamily: FONT.mono, fontSize: 15, fontWeight: 500, letterSpacing: -0.3,
+            fontFamily: FONT.mono, fontSize: 22, fontWeight: 500, letterSpacing: -0.6,
+            color: theme.text,
           }}>{showScore}</span>
           <span style={{
-            fontFamily: FONT.mono, fontSize: 11,
+            fontFamily: FONT.mono, fontSize: 12,
             color: showDiff > 0 ? theme.textSec : theme.good,
           }}>{showDiff >= 0 ? '+' : ''}{showDiff}</span>
           <span style={{ flex: 1 }}/>
-          <span style={{
-            fontFamily: FONT.mono, fontSize: 10, color: theme.textSec, letterSpacing: 0.3,
-          }}>{showDate} · {showCourse}</span>
+          <span style={{ fontSize: 11, color: theme.textSec }}>
+            {showDate} · {showCourse}
+          </span>
         </div>
       </div>
 
-      {/* ② 48h CTA */}
+      {/* ② 48h CTA — subtle (secondary) so it doesn't compete with "+ラウンド記録" */}
       {withinWindow && lastRound && (
         <div
           onClick={() => reopenComplete(lastRound)}
           style={{
-            ...section(18), padding: '14px 14px',
-            background: theme.text, color: theme.bg,
-            borderRadius: 8, cursor: 'pointer',
+            ...section(16), padding: '12px 14px',
+            background: theme.surface,
+            border: `1px solid ${theme.border}`,
+            borderLeft: `3px solid ${theme.text}`,
+            borderRadius: 6, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 12,
           }}
         >
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontFamily: FONT.mono, fontSize: 9, opacity: 0.6,
+              fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
               letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500,
-            }}>Round Recap · {Math.max(1, Math.round(48 - hoursSinceRound))}h 残り</div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 4, letterSpacing: -0.1 }}>
-              ラウンドお疲れ様でした！
+            }}>Round Recap · 残り {Math.max(1, Math.round(48 - hoursSinceRound))}h</div>
+            <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 3, letterSpacing: -0.1, color: theme.text }}>
+              ラウンドお疲れ様でした
             </div>
-            <div style={{ fontSize: 11.5, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
-              今日の結果と、次に活かすポイントを見る
+            <div style={{ fontSize: 10.5, color: theme.textSec, marginTop: 3, lineHeight: 1.5 }}>
+              今日の結果と、次に活かすポイントを振り返る
             </div>
           </div>
-          <span style={{ fontFamily: FONT.mono, fontSize: 14, opacity: 0.6 }}>→</span>
+          <span style={{ fontFamily: FONT.mono, fontSize: 12, color: theme.textSec }}>→</span>
         </div>
       )}
 

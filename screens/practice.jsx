@@ -347,10 +347,12 @@ function DrillProgressHero({ theme, lib, challengeKey, completions }) {
   const maxStars = totalDrills * 3;
 
   const copy = (() => {
-    if (doneCount === 0) return '最初の1つからはじめよう。まずは1ドリル、プレイしてみる。';
-    if (doneCount < totalDrills) return `あと ${totalDrills - doneCount} ドリルで、全ホール攻略。Clubhouse Challenge の挑戦権も本番に。`;
-    if (totalStars < maxStars) return `全ドリル制覇！ ★${totalStars}/${maxStars} — 全部 ★★★ を狙って記録更新もアリ。`;
-    return '完璧！ このチャレンジは文句なし。Clubhouse でベスト更新を狙おう。';
+    if (doneCount === 0) {
+      if (totalStars === 0) return 'まずは1ドリル、プレイしてみる。★★★ でクリア扱いになります。';
+      return `プレイはOK。あとは★★★を目指そう（★${totalStars}/${maxStars}）。`;
+    }
+    if (doneCount < totalDrills) return `クリア ${doneCount}/${totalDrills}。残り ${totalDrills - doneCount} ドリルを ★★★ で仕上げよう。`;
+    return '完璧！ 全ドリル★★★クリア。Clubhouse でベスト更新を狙おう。';
   })();
 
   return (
@@ -443,12 +445,13 @@ function getBestDrillSession(challengeKey, drillId) {
   if (!forThis.length) return null;
   return forThis.reduce((b, r) => (r.stars > (b?.stars || 0) || (r.stars === (b?.stars || 0) && r.pct > (b?.pct || 0)) ? r : b), null);
 }
-// Union of legacy toggle and session history → done
+// Clear threshold: require 3 stars from a session (or the legacy manual toggle).
+const CLEAR_STARS = 3;
 function isDrillDone(challengeKey, drillId, completions) {
   const legacy = !!completions?.[`${challengeKey}/${drillId}`]?.done;
   if (legacy) return true;
   const best = getBestDrillSession(challengeKey, drillId);
-  return !!(best && best.stars >= 1);
+  return !!(best && best.stars >= CLEAR_STARS);
 }
 
 function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, onOpenDetail, onOpenTest, onStartSession }) {
@@ -692,7 +695,7 @@ function FairwayDrillNode({ theme, drill, done, bestSession, hasDetail, onStart,
         }}>{drill.time} · {drill.detail}</div>
       </button>
 
-      {/* Play chip */}
+      {/* Play chip — label reflects progress toward ★3 */}
       <button onClick={onStart} style={{
         background: done ? C.GRASS_SOFT : C.GRASS_D,
         color: done ? C.GRASS_D : '#fff',
@@ -700,7 +703,7 @@ function FairwayDrillNode({ theme, drill, done, bestSession, hasDetail, onStart,
         borderRadius: 14, padding: '4px 10px',
         fontSize: 10, fontWeight: 700, cursor: 'pointer',
         fontFamily: FONT.mono, flexShrink: 0, letterSpacing: 0.5,
-      }}>{done ? 'もう一度' : 'プレイ'}</button>
+      }}>{done ? 'もう一度' : stars > 0 ? '★更新' : 'プレイ'}</button>
 
       {hasDetail && (
         <button onClick={(e) => { e.stopPropagation(); onOpenDetail(); }} style={{
