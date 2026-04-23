@@ -4,6 +4,15 @@
 // Drill diagram — SVG top-down view + setup illustration
 // Variants: 'setup-gate' | 'setup-straight' | 'setup-over' | 'setup-metronome' | 'setup-onehand'
 // ─────────────────────────────────────────────────────────────
+// Reps per drill variant — small cycling counter in top-right data chip.
+const DRILL_REPS = {
+  'setup-gate':      5,   // "5球 × 3セット" 感
+  'setup-straight':  10,  // "10球連続成功まで"
+  'setup-over':      5,   // "20球中 16球以上" — 5ずつ表示
+  'setup-metronome': 4,   // "5球 × 4セット"
+  'setup-onehand':   3,   // "3球"
+};
+
 function DrillDiagram({ variant, theme, view }) {
   // view: 'top' (俯瞰) | 'setup' (セットアップ/グリップ図)
   const W = 320, H = 260;
@@ -12,6 +21,18 @@ function DrillDiagram({ variant, theme, view }) {
   const ink = theme.text;
   const sub = theme.textSec;
   const accent = theme.accent;
+
+  // Live rep counter — cycles during top-view animation.
+  // 2.4s = one full ball cycle → counter ticks up with each rep.
+  const maxReps = DRILL_REPS[variant] || 5;
+  const [rep, setRep] = React.useState(1);
+  React.useEffect(() => {
+    if (view !== 'top') return;
+    const iv = setInterval(() => {
+      setRep(r => (r % maxReps) + 1);
+    }, 2400);
+    return () => clearInterval(iv);
+  }, [view, maxReps]);
 
   // Iso palette — fixed for visual identity regardless of app theme
   const BG_TOP = '#DEE5E0';
@@ -95,6 +116,38 @@ function DrillDiagram({ variant, theme, view }) {
     @keyframes drFlag {
       0%,100% { transform: skewX(-3deg); }
       50%     { transform: skewX(3deg); }
+    }
+    @keyframes drGateFlash {
+      0%, 46% { opacity: 0; }
+      50%, 58% { opacity: 1; }
+      65%,100% { opacity: 0; }
+    }
+    @keyframes drZoneFlash {
+      0%, 78% { opacity: 0; }
+      82%, 90% { opacity: 0.7; }
+      100%    { opacity: 0; }
+    }
+    @keyframes drTeePing {
+      0%, 46% { transform: translateY(0); }
+      52%     { transform: translateY(-3px); }
+      60%     { transform: translateY(0); }
+      100%    { transform: translateY(0); }
+    }
+    @keyframes drRepBadge {
+      0%,85% { transform: scale(1); opacity: 1; }
+      90%    { transform: scale(1.25); opacity: 1; }
+      100%   { transform: scale(1); opacity: 1; }
+    }
+    @keyframes drBeatBall {
+      0%,100% { transform: scale(1); }
+      50%     { transform: scale(1.18); }
+    }
+    @keyframes drTrailingBall {
+      0%,30% { transform: translateX(0) scale(1); opacity: 0; }
+      35%    { transform: translateX(4px) scaleX(1.25) scaleY(0.8); opacity: 1; }
+      45%    { transform: translateX(30px) scale(1); opacity: 1; }
+      95%    { transform: translateX(210px); opacity: 1; }
+      100%   { transform: translateX(210px); opacity: 0; }
     }
   `;
 
@@ -335,6 +388,28 @@ function DrillDiagram({ variant, theme, view }) {
     </g>
   );
 
+  // Rep badge (top-right) — live counter that ticks with each ball cycle
+  const repBadge = (
+    <g transform={`translate(${W - 14 - 68}, 14)`}>
+      <rect width={68} height={22} rx={3} fill={ISO_INK} stroke={ISO_INK} strokeWidth={0.5}/>
+      <text x={6} y={15} fontSize={9} fill="rgba(255,255,255,0.55)" fontFamily='"IBM Plex Mono", monospace' letterSpacing={0.6}>
+        REP
+      </text>
+      <g key={rep} style={{
+        transformOrigin: `${28}px ${11}px`, transformBox: 'fill-box',
+        animation: 'drRepBadge 400ms ease-out both',
+      }}>
+        <text x={30} y={15} fontSize={11} fill="#fff"
+          fontFamily='"IBM Plex Mono", monospace' fontWeight={600} letterSpacing={0.3}>
+          {rep}
+        </text>
+      </g>
+      <text x={42} y={15} fontSize={9} fill="rgba(255,255,255,0.5)" fontFamily='"IBM Plex Mono", monospace'>
+        /{maxReps}
+      </text>
+    </g>
+  );
+
   if (variant === 'setup-gate') {
     return (
       <svg viewBox="0 0 320 260" width="100%" height="100%" style={{ display: 'block' }}>
@@ -364,10 +439,29 @@ function DrillDiagram({ variant, theme, view }) {
           +2cm
         </text>
 
-        {/* Ball animation */}
+        {/* Gate SUCCESS FLASH — green glow between tees when ball passes through */}
+        <rect x={148} y={184} width={34} height={28} rx={2}
+          fill="rgba(95,196,139,0.85)"
+          style={{ animation: `drGateFlash ${'2.4s'} ease-out infinite`, opacity: 0 }}/>
+        <text x={165} y={204} fontSize={11} fill="#1A3A2A" textAnchor="middle"
+          fontFamily='"IBM Plex Mono", monospace' fontWeight={700}
+          style={{ animation: `drGateFlash ${'2.4s'} ease-out infinite`, opacity: 0 }}>
+          ✓
+        </text>
+        {/* Gate tees slightly ping when ball passes */}
+        <g style={{ animation: `drTeePing ${'2.4s'} ease-out infinite` }}>
+          {[150, 180].map(x => (
+            <circle key={`ping-${x}`} cx={x} cy={182} r={5} fill="none"
+              stroke="#5FC48B" strokeWidth={1.5}
+              style={{ animation: `drGateFlash ${'2.4s'} ease-out infinite`, opacity: 0 }}/>
+          ))}
+        </g>
+
+        {/* Ball animation (primary + trailing second ball for sequence feel) */}
         {ballWithTrail('drBallGate', 'drBallShadowGate')}
 
         {dataChip('GATE · 1m')}
+        {repBadge}
       </svg>
     );
   }
@@ -386,9 +480,24 @@ function DrillDiagram({ variant, theme, view }) {
         {/* Subtle guide line on grass */}
         <line x1={60} x2={260} y1={205} y2={205} stroke="rgba(255,255,255,0.35)" strokeWidth={0.8} strokeDasharray="2 4"/>
 
+        {/* Distance marker */}
+        <text x={160} y={225} fontSize={9} fill={ISO_INK} textAnchor="middle"
+          fontFamily='"IBM Plex Mono", monospace' fontWeight={600} letterSpacing={0.3}>
+          ← 1 m →
+        </text>
+
         {ballWithTrail('drBallStraight', 'drBallShadow')}
 
+        {/* Success pop at the hole */}
+        <text x={265} y={182} fontSize={14} fill="#5FC48B" textAnchor="middle"
+          fontFamily='"IBM Plex Mono", monospace' fontWeight={700}
+          style={{ transformOrigin: '265px 190px', transformBox: 'fill-box',
+                   animation: `drGateFlash 2.4s ease-out infinite`, opacity: 0 }}>
+          ✓
+        </text>
+
         {dataChip('STRAIGHT · 1m')}
+        {repBadge}
       </svg>
     );
   }
@@ -417,9 +526,17 @@ function DrillDiagram({ variant, theme, view }) {
           +30cm
         </text>
 
+        {/* Zone success flash when ball stops */}
+        <ellipse cx={230} cy={205} rx={14} ry={6}
+          fill="rgba(95,196,139,0.5)"
+          style={{ animation: `drZoneFlash 2.4s ease-out infinite`, opacity: 0 }}/>
+        <ellipse cx={230} cy={205} rx={8} ry={3} fill="#5FC48B" stroke="#2A8D5C" strokeWidth={1.2}
+          style={{ animation: `drZoneFlash 2.4s ease-out infinite`, opacity: 0 }}/>
+
         {ballWithTrail('drBallOver', 'drBallShadowOver')}
 
         {dataChip('OVER · 3m + 30cm')}
+        {repBadge}
       </svg>
     );
   }
@@ -432,9 +549,11 @@ function DrillDiagram({ variant, theme, view }) {
         <rect x={0} y={0} width={320} height={260} fill="url(#drBg)"/>
         {isoGrass}
 
-        {/* Still ball at center of grass */}
+        {/* Ball at center of grass — pulses with the beat */}
         <ellipse cx={160} cy={217} rx={6} ry={2} fill={SHADOW}/>
-        <circle cx={160} cy={210} r={5} fill="#fff" stroke={ISO_INK} strokeWidth={0.8}/>
+        <circle cx={160} cy={210} r={5} fill="#fff" stroke={ISO_INK} strokeWidth={0.8}
+          style={{ transformOrigin: '160px 210px', transformBox: 'fill-box',
+                   animation: 'drBeatBall 0.79s ease-in-out infinite' }}/>
 
         {/* Pendulum club from top (hinge near top) */}
         <g style={{ transformOrigin: '160px 80px', animation: 'drPendulum 0.79s ease-in-out infinite' }}>
@@ -469,6 +588,7 @@ function DrillDiagram({ variant, theme, view }) {
         </g>
 
         {dataChip('METRONOME · ♩=76')}
+        {repBadge}
       </svg>
     );
   }
@@ -506,6 +626,7 @@ function DrillDiagram({ variant, theme, view }) {
         </g>
 
         {dataChip('ONE-HAND')}
+        {repBadge}
       </svg>
     );
   }

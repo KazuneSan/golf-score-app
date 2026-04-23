@@ -11,10 +11,12 @@ function PracticeScreen({ theme, go }) {
   // straight into the drill phase for that challenge on mount.
   React.useEffect(() => {
     const sel = window.__selectedDrillTop;
+    const openTest = window.__autoOpenTest;
     if (sel) {
       setChallenge(sel);
-      setPhase('drill');
+      setPhase(openTest ? 'drillTest' : 'drill');
       window.__selectedDrillTop = null;
+      window.__autoOpenTest = false;
     }
   }, []);
   // drill completion state keyed by `${challenge}/${drillId}` → { done: bool, ts }
