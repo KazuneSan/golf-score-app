@@ -137,27 +137,34 @@ function HomeScreen({ theme, persona, go }) {
     }}>
       <style>{homeKeyframes}</style>
 
-      {/* ① LATEST ROUND — same layout as original, emphasized best */}
+      {/* ① LATEST ROUND — BEST is the hero, LATEST is secondary below */}
       <div
         style={{ ...section(4), cursor: lastRound ? 'pointer' : 'default' }}
         onClick={lastRound ? () => reopenComplete(lastRound) : undefined}
       >
         {label('LATEST ROUND', { paddingTop: 6 })}
+
+        {/* Top row — BEST hero + sparkline */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginTop: 10 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontFamily: FONT.mono, fontSize: 36, fontWeight: 400, letterSpacing: -1.2 }}>
-                {showScore}
-              </span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
               <span style={{
-                fontFamily: FONT.mono, fontSize: 13,
-                color: showDiff > 0 ? theme.textSec : theme.good,
-              }}>
-                {showDiff >= 0 ? '+' : ''}{showDiff}
-              </span>
+                fontFamily: FONT.mono, fontSize: 14, color: GOLD, fontWeight: 700,
+              }}>★</span>
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 40, fontWeight: 400, letterSpacing: -1.4,
+                color: GOLD, lineHeight: 1,
+              }}>{p.best}</span>
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 11, color: GOLD, fontWeight: 700,
+                letterSpacing: 0.6, marginLeft: 2,
+              }}>BEST</span>
             </div>
-            <div style={{ fontSize: 11, color: theme.textSec, marginTop: 2 }}>
-              {showDate} · {showCourse}
+            <div style={{
+              fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
+              marginTop: 4, letterSpacing: 0.3,
+            }}>
+              ave. {avgScore.toFixed(1)}
             </div>
           </div>
           <div style={{ flex: 1, maxWidth: 180 }}>
@@ -190,7 +197,7 @@ function HomeScreen({ theme, persona, go }) {
                 );
               })}
 
-              {/* BEST — gold dot, slightly larger */}
+              {/* BEST — gold dot (slightly larger) */}
               {bestIdx >= 0 && (
                 <g style={{
                   transformOrigin: `${sparkPoints[bestIdx].x}px ${sparkPoints[bestIdx].y}px`,
@@ -213,23 +220,30 @@ function HomeScreen({ theme, persona, go }) {
                   }}/>
               )}
             </svg>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-              fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
-              marginTop: 4, letterSpacing: 0.4,
-            }}>
-              <span>平均 {avgScore.toFixed(1)}</span>
-              <span style={{ color: GOLD, fontWeight: 700, fontSize: 10 }}>
-                ★ BEST {p.best}
-              </span>
-            </div>
           </div>
         </div>
+
+        {/* Bottom row — LATEST secondary info */}
         <div style={{
-          fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
-          letterSpacing: 0.4, marginTop: 6,
+          display: 'flex', alignItems: 'baseline', gap: 8,
+          marginTop: 10, paddingTop: 10,
+          borderTop: `1px solid ${theme.border}`,
         }}>
-          <span style={{ color: GOLD }}>★</span> ベスト = 君のゴルフレベル
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
+            letterSpacing: 0.8, fontWeight: 600, textTransform: 'uppercase',
+          }}>Latest</span>
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 15, fontWeight: 500, letterSpacing: -0.3,
+          }}>{showScore}</span>
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 11,
+            color: showDiff > 0 ? theme.textSec : theme.good,
+          }}>{showDiff >= 0 ? '+' : ''}{showDiff}</span>
+          <span style={{ flex: 1 }}/>
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 10, color: theme.textSec, letterSpacing: 0.3,
+          }}>{showDate} · {showCourse}</span>
         </div>
       </div>
 
