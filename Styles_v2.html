@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"/>
+  <title>最適化版比較 · Linear / Fitness · Fairway</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+    :root { color-scheme: light; }
+    html, body { margin: 0; padding: 0; background: #F3F1EC; font-family: 'Noto Sans JP', 'Inter', system-ui, sans-serif; color: #171717; }
+    * { box-sizing: border-box; }
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .hide-scroll { scrollbar-width: none; }
+
+    .page-header {
+      padding: 36px 40px 22px;
+      border-bottom: 1px solid #E5E0D6;
+      background: #F3F1EC;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .page-header h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.6px; }
+    .page-header .sub { color: #78736A; font-size: 13px; margin-top: 6px; max-width: 640px; }
+    .screen-tabs { display: flex; gap: 6px; margin-top: 16px; }
+    .screen-tabs button {
+      background: transparent; border: 1px solid #D6D1C5;
+      color: #171717; padding: 7px 14px; font: inherit; font-size: 12px; font-weight: 500;
+      border-radius: 999px; cursor: pointer;
+    }
+    .screen-tabs button.active { background: #171717; color: #F3F1EC; border-color: #171717; }
+
+    .grid {
+      padding: 24px 40px 64px;
+      display: grid;
+      grid-template-columns: repeat(2, 380px);
+      gap: 36px;
+      justify-content: start;
+    }
+    .col .label { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+    .col .label .no { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #A39E93; font-weight: 500; letter-spacing: 0.5px; }
+    .col .label .name { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .col .meta { font-size: 12px; color: #78736A; line-height: 1.55; margin-bottom: 14px; min-height: 52px; max-width: 360px; }
+    .col .meta strong { color: #171717; font-weight: 600; }
+
+    .phone {
+      width: 360px; height: 760px;
+      border-radius: 40px;
+      background: #111;
+      padding: 8px;
+      box-shadow: 0 30px 80px -30px rgba(0,0,0,0.35), 0 12px 24px -12px rgba(0,0,0,0.2);
+    }
+    .phone-screen {
+      width: 100%; height: 100%;
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="screens/styles/pattern-1-linear-v2.jsx"></script>
+  <script type="text/babel" src="screens/styles/pattern-2-fitness-v2.jsx"></script>
+
+  <script type="text/babel" data-screen-label="Styles V2 Compare">
+    const { useState } = React;
+
+    const PATTERNS = [
+      {
+        key: 'linear-v2', no: '01·v2', name: 'Linear（最適化）',
+        meta: 'モノトーン・余白で語る。主役は「目標差分」。課題 → ドリルへの橋渡しを明示。1ホール1画面の静かな入力。',
+        Comp: window.Pattern1LinearV2
+      },
+      {
+        key: 'fitness-v2', no: '02·v2', name: 'Fitness（最適化）',
+        meta: '森夕暮れ配色。3リング=ボギーオン / 3パット抑制 / OB抑制 に再定義。ホール完了がリングを動かす達成感型。',
+        Comp: window.Pattern2FitnessV2
+      },
+    ];
+
+    const SCREENS = [
+      { k: 'home',     label: 'Home' },
+      { k: 'analysis', label: '分析' },
+      { k: 'input',    label: 'ラウンド入力' },
+    ];
+
+    function App() {
+      const [screen, setScreen] = useState('home');
+      return (
+        <div data-screen-label="Styles V2 Compare">
+          <div className="page-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 40, flexWrap: 'wrap' }}>
+              <div>
+                <h1>最適化版比較 · Linear / Fitness</h1>
+                <div className="sub">
+                  前ラウンドで選ばれた 01・02 を、このサービス（目標差分ドリブンなゴルフ記録＆練習アプリ）向けに最適化。
+                  データモデル（100切りペルソナ、ボギーオン率/3パット率/OB率など）に沿って再設計しています。
+                </div>
+              </div>
+              <div className="screen-tabs">
+                {SCREENS.map(s => (
+                  <button key={s.k} onClick={()=>setScreen(s.k)} className={screen===s.k ? 'active' : ''}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid">
+            {PATTERNS.map(p => (
+              <div key={p.key} className="col">
+                <div className="label">
+                  <span className="no">{p.no}</span>
+                  <span className="name">{p.name}</span>
+                </div>
+                <div className="meta">{p.meta}</div>
+                <div className="phone">
+                  <div className="phone-screen">
+                    {p.Comp ? <p.Comp screen={screen}/> : <div style={{padding:40, color:'#aaa'}}>Not implemented</div>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Fairway · Golf Score Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  html, body { margin: 0; padding: 0; background: #ECECEC; font-family: 'Noto Sans JP', 'Inter', -apple-system, system-ui, sans-serif; }
+  * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+  button { font-family: inherit; }
+  textarea { font-family: inherit; }
+  /* hide scrollbars inside the phone for a cleaner look */
+  .hide-scroll::-webkit-scrollbar { display: none; }
+  .hide-scroll { scrollbar-width: none; }
+</style>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="tokens.jsx"></script>
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="data-courses.jsx"></script>
+  <script type="text/babel" src="data-drills.jsx"></script>
+  <script type="text/babel" src="data-drill-details.jsx"></script>
+  <script type="text/babel" src="data-tips.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="screens/home.jsx"></script>
+  <script type="text/babel" src="screens/course-select.jsx"></script>
+  <script type="text/babel" src="screens/round-setup.jsx"></script>
+  <script type="text/babel" src="screens/round.jsx"></script>
+  <script type="text/babel" src="screens/round-result.jsx"></script>
+  <script type="text/babel" src="screens/round-complete.jsx"></script>
+  <script type="text/babel" src="screens/animation-gallery.jsx"></script>
+  <script type="text/babel" src="screens/practice.jsx"></script>
+  <script type="text/babel" src="screens/drill-detail.jsx"></script>
+  <script type="text/babel" src="screens/analysis.jsx"></script>
+  <script type="text/babel" src="screens/onboarding.jsx"></script>
+
+  <script type="text/babel">
+  // Tweakable defaults — persisted via EDITMODE markers
+  const TWEAKS = /*EDITMODE-BEGIN*/{
+    "dark": false,
+    "persona": "100切り",
+    "density": "comfortable"
+  }/*EDITMODE-END*/;
+
+  const SCREEN_LABEL = {
+    onboarding: '01 Onboarding',
+    home: '02 Home',
+    'course-select':  '03a Course Select',
+    'round-setup':    '03b Round Setup',
+    round:            '03c Round Input',
+    'round-result':   '03d Round Result',
+    'round-complete': '03e Round Complete',
+    practice: '04 Practice Mode',
+    analysis: '05 Analysis',
+    'animation-gallery': 'DEV Animation Gallery',
+  };
+
+  function App() {
+    const [dark, setDark] = React.useState(TWEAKS.dark);
+    const [personaKey, setPersonaKey] = React.useState(TWEAKS.persona);
+    const [screen, setScreen] = React.useState(() => localStorage.getItem('gs_screen') || 'home');
+    const [tweaksOpen, setTweaksOpen] = React.useState(false);
+    const theme = useTheme(dark);
+    const persona = PERSONAS[personaKey] || PERSONAS['90切り'];
+
+    React.useEffect(() => { localStorage.setItem('gs_screen', screen); }, [screen]);
+
+    // Tweak-mode protocol
+    React.useEffect(() => {
+      const onMsg = (e) => {
+        const d = e.data || {};
+        if (d.type === '__activate_edit_mode') setTweaksOpen(true);
+        else if (d.type === '__deactivate_edit_mode') setTweaksOpen(false);
+      };
+      window.addEventListener('message', onMsg);
+      window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+      return () => window.removeEventListener('message', onMsg);
+    }, []);
+    const persist = (edits) => window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+
+    const go = (s) => setScreen(s);
+
+    // What goes inside the phone depends on whether screen owns its own nav
+    const body = (() => {
+      if (screen === 'home')           return <HomeScreen theme={theme} persona={persona} go={go}/>;
+      if (screen === 'course-select')  return <CourseSelectScreen theme={theme} go={go}/>;
+      if (screen === 'round-setup')    return <RoundSetupScreen theme={theme} persona={persona} go={go}/>;
+      if (screen === 'round')          return <RoundScreen theme={theme} persona={persona} go={go}/>;
+      if (screen === 'round-result')   return <RoundResultScreen theme={theme} persona={persona} go={go}/>;
+      if (screen === 'round-complete') return <RoundCompleteScreen theme={theme} persona={persona} go={go}/>;
+      if (screen === 'animation-gallery') return <AnimationGalleryScreen theme={theme} go={go}/>;
+      if (screen === 'practice')       return <PracticeScreen theme={theme} go={go}/>;
+      if (screen === 'analysis')       return <AnalysisScreen theme={theme} persona={persona} go={go}/>;
+      if (screen === 'onboarding')     return <OnboardingScreen theme={theme} setPersonaKey={(k)=>{setPersonaKey(k); persist({persona: k});}} onFinish={()=>go('home')}/>;
+    })();
+
+    return (
+      <div style={{
+        minHeight: '100vh', width: '100%',
+        background: dark ? '#0B0B0B' : '#ECECEC',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '40px 20px 80px',
+      }}>
+        {/* Top bar — title & screen nav */}
+        <div style={{
+          width: '100%', maxWidth: 900, margin: '0 auto 28px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          color: dark ? '#FAFAFA' : '#111111', fontFamily: '"Noto Sans JP", "Inter", system-ui',
+        }}>
+          <div>
+            <div style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, letterSpacing: 1.0, textTransform: 'uppercase', opacity: 0.45 }}>Prototype · Linear v2</div>
+            <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, marginTop: 4 }}>Fairway</div>
+          </div>
+          <div style={{
+            display: 'flex', gap: 2, padding: 3,
+            background: dark ? '#1F1F1F' : '#FFFFFF',
+            border: `1px solid ${dark ? '#242424' : '#EAEAEA'}`,
+            borderRadius: 8,
+          }}>
+            {[
+              ['onboarding', '診断'],
+              ['home', 'Home'],
+              ['course-select', '記録'],
+              ['practice', '練習'],
+              ['analysis', '分析'],
+            ].map(([k, label]) => {
+              // "記録" is highlighted across the whole course-select → round-setup → round → result → complete flow
+              const on = k === 'course-select'
+                ? ['course-select', 'round-setup', 'round', 'round-result', 'round-complete'].includes(screen)
+                : screen === k;
+              return (
+                <button key={k} onClick={()=>go(k)} style={{
+                  background: on ? (dark ? '#FAFAFA' : '#111111') : 'transparent',
+                  color: on ? (dark ? '#111111' : '#FAFAFA') : (dark ? '#A0A0A0' : '#6B6B6B'),
+                  border: 'none', padding: '7px 14px', borderRadius: 6,
+                  fontFamily: '"Noto Sans JP", "Inter", system-ui',
+                  fontSize: 12.5, fontWeight: 500, cursor: 'pointer',
+                  letterSpacing: -0.1,
+                }}>{label}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Phone */}
+        <div data-screen-label={SCREEN_LABEL[screen]} style={{
+          filter: dark ? 'none' : 'drop-shadow(0 30px 60px rgba(0,0,0,0.15))',
+        }}>
+          <IOSDevice dark={dark} width={390} height={844}>
+            <div className="hide-scroll" style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingTop: 58, background: theme.bg, color: theme.text }}>
+              {body}
+            </div>
+          </IOSDevice>
+        </div>
+
+        {/* Tweaks panel */}
+        {tweaksOpen && (
+          <div style={{
+            position: 'fixed', bottom: 24, right: 24,
+            width: 280, background: dark ? '#141414' : '#fff',
+            color: dark ? '#FAFAFA' : '#111111',
+            border: `1px solid ${dark ? '#242424' : '#EAEAEA'}`,
+            borderRadius: 8, padding: 16,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+            fontFamily: '"Noto Sans JP", "Inter", system-ui', fontSize: 13,
+            zIndex: 100,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>Tweaks</div>
+              <button onClick={()=>setTweaksOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'inherit', opacity: 0.5 }}>×</button>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>テーマ</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={()=>{setDark(false); persist({dark: false});}} style={tweakChip(!dark, dark)}>Light</button>
+                <button onClick={()=>{setDark(true); persist({dark: true});}} style={tweakChip(dark, dark)}>Dark</button>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>ペルソナ</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {Object.keys(PERSONAS).map(k => (
+                  <button key={k} onClick={()=>{setPersonaKey(k); persist({persona: k});}} style={tweakChip(personaKey===k, dark)}>
+                    {k} <span style={{ opacity: 0.5, fontFamily: 'JetBrains Mono', marginLeft: 4 }}>{PERSONAS[k].stats.avg}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function tweakChip(on, dark) {
+    return {
+      flex: 1,
+      border: `1px solid ${on ? 'transparent' : (dark ? '#242424' : '#EAEAEA')}`,
+      background: on ? (dark ? '#FAFAFA' : '#111111') : (dark ? '#1F1F1F' : '#F5F5F5'),
+      color: on ? (dark ? '#111111' : '#FAFAFA') : 'inherit',
+      padding: '8px 12px', borderRadius: 6,
+      fontSize: 12, fontWeight: 500, cursor: 'pointer',
+      textAlign: 'left', fontFamily: '"Noto Sans JP", "Inter", system-ui',
+    };
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

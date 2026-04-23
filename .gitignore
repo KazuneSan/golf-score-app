@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Editor / OS caches
+.vscode/
+.idea/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Vercel link (local only)
+.vercel/
+.vercel
+
+# Claude session
+.claude/
+
+# User-uploaded local screenshots (not needed for the app)
+uploads/
