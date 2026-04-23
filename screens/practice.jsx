@@ -330,96 +330,6 @@ function ChallengePickRow({ theme, challengeKey, meta, selected, completions, on
 }
 
 // ─────────────────────────────────────────────────────────────
-// DrillProgressHero — dark card at top of DrillScreen replacing goal card.
-// Shows X/Y drills cleared + star total + motivational copy.
-// ─────────────────────────────────────────────────────────────
-function DrillProgressHero({ theme, lib, challengeKey, completions }) {
-  const flat = lib.conditions.flatMap(cond => cond.drills);
-  const totalDrills = flat.length;
-  // Use isDrillDone logic to count completions (session-aware)
-  const doneCount = flat.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
-  const pct = totalDrills ? Math.round((doneCount / totalDrills) * 100) : 0;
-  // Star totals (out of 3 per drill)
-  const totalStars = flat.reduce((sum, d) => {
-    const best = getBestDrillSession(challengeKey, d.id);
-    return sum + (best?.stars || 0);
-  }, 0);
-  const maxStars = totalDrills * 3;
-
-  const copy = (() => {
-    if (doneCount === 0) {
-      if (totalStars === 0) return 'まずは1ドリル、プレイしてみる。★★★ でクリア扱いになります。';
-      return `プレイはOK。あとは★★★を目指そう（★${totalStars}/${maxStars}）。`;
-    }
-    if (doneCount < totalDrills) return `クリア ${doneCount}/${totalDrills}。残り ${totalDrills - doneCount} ドリルを ★★★ で仕上げよう。`;
-    return '完璧！ 全ドリル★★★クリア。Clubhouse でベスト更新を狙おう。';
-  })();
-
-  return (
-    <div style={{
-      background: theme.text, color: theme.bg,
-      borderRadius: 10, padding: '14px 16px',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <div style={{
-          fontFamily: FONT.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',
-          opacity: 0.55, fontWeight: 600,
-        }}>Drill Progress</div>
-        {totalStars > 0 && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 3,
-            fontFamily: FONT.mono, fontSize: 11, fontWeight: 600,
-            opacity: 0.85,
-          }}>
-            <svg width="11" height="11" viewBox="0 0 24 24">
-              <path d="M12 2 L14.5 9 L22 9 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2 9 L9.5 9 Z"
-                fill="#FFB93D" stroke="none"/>
-            </svg>
-            <span>{totalStars}/{maxStars}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Big progress numbers */}
-      <div style={{
-        display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 10, marginBottom: 10,
-      }}>
-        <span style={{
-          fontFamily: FONT.mono, fontSize: 42, fontWeight: 300,
-          letterSpacing: -1.4, lineHeight: 0.9,
-        }}>{doneCount}</span>
-        <span style={{ fontFamily: FONT.mono, fontSize: 17, opacity: 0.5 }}>/ {totalDrills}</span>
-        <span style={{ flex: 1 }}/>
-        <span style={{
-          fontFamily: FONT.mono, fontSize: 22, fontWeight: 500,
-          letterSpacing: -0.6, color: pct === 100 ? '#5FC48B' : 'inherit',
-        }}>{pct}%</span>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{
-        height: 4, background: 'rgba(255,255,255,0.15)',
-        borderRadius: 2, overflow: 'hidden', marginBottom: 10,
-      }}>
-        <div style={{
-          width: `${pct}%`, height: '100%',
-          background: pct === 100 ? '#5FC48B' : 'rgba(255,255,255,0.95)',
-          transition: 'width .4s',
-        }}/>
-      </div>
-
-      <div style={{
-        padding: '8px 10px',
-        background: 'rgba(255,255,255,0.08)',
-        borderRadius: 6,
-        fontSize: 11, lineHeight: 1.55, opacity: 0.85,
-      }}>{copy}</div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // Fairway roadmap — "course" visualization of challenge drills.
 // Each condition = one hole. Each drill = a distance marker on the fairway.
 // Clubhouse Challenge at the bottom = goal metric test.
@@ -896,16 +806,6 @@ function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, togg
           }}>取り組み中</div>
           <div style={{ fontSize: 20, fontWeight: 700, marginTop: 8, letterSpacing: -0.4 }}>{lib.challenge}</div>
           <div style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>{lib.challengeSub}</div>
-        </div>
-
-        {/* Drill progress — dark hero card (replaces goal card; goal moves to Clubhouse CTA) */}
-        <div style={{ padding: '8px 16px 12px' }}>
-          <DrillProgressHero
-            theme={theme}
-            lib={lib}
-            challengeKey={challengeKey}
-            completions={completions}
-          />
         </div>
 
         {/* Fairway roadmap — each condition = one hole */}
