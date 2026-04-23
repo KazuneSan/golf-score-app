@@ -72,6 +72,24 @@ function HomeScreen({ theme, persona, go }) {
     go('practice');
   };
 
+  // Metric-key → related challenge key (for Focus matrix deep-linking)
+  const METRIC_TO_CHALLENGE = {
+    boggyOn:   'second',  // ボギーオン率
+    parOn:     'second',  // パーオン率
+    fairway:   'tee',     // FWキープ率 (tee shot skill)
+    upDown:    'approach',// 寄せワン率
+    threePutt: 'putt',    // 3パット率
+    ob:        'tee',     // OB率
+    avgPutt:   'putt',
+    sandSave:  'approach',
+  };
+  const goToMetricDrills = (metricKey) => {
+    const ch = METRIC_TO_CHALLENGE[metricKey] || primaryChallenge;
+    window.__selectedDrillTop = ch;
+    // Do NOT set autoOpenTest — we want the drill list (not the test)
+    go('practice');
+  };
+
   // --- derived ----------------------------------------------------
   const latest = p.rounds[0];
   const scores = p.rounds.map(r => r.score);
@@ -354,9 +372,15 @@ function HomeScreen({ theme, persona, go }) {
         )}
       </div>
 
-      {/* ⑤ FOCUS 3×2 — minimal grid, no heavy chrome per cell */}
+      {/* ⑤ FOCUS 3×2 — tap a cell to open its related challenge's drills */}
       <div style={section(26)}>
         {label('FOCUS · 目標差分')}
+        <div style={{
+          fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer,
+          marginTop: 4, letterSpacing: 0.3,
+        }}>
+          気になる指標をタップ → 関連ドリルへ
+        </div>
         <div style={{
           marginTop: 10,
           display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
@@ -365,7 +389,9 @@ function HomeScreen({ theme, persona, go }) {
           {['boggyOn', 'parOn', 'fairway', 'upDown', 'threePutt', 'ob'].map(k => (
             <MetricCell key={k} k={k}
               cur={s[k]} tgt={t[k]}
-              reverse={reverseSet.has(k)} theme={theme}/>
+              reverse={reverseSet.has(k)}
+              theme={theme}
+              onClick={() => goToMetricDrills(k)}/>
           ))}
         </div>
       </div>
@@ -468,9 +494,9 @@ function HomeScreen({ theme, persona, go }) {
 }
 
 // ─────────────────────────────────────────────────────────
-// Metric cell — minimal, no card chrome, just text + tiny bar
+// Metric cell — minimal, tappable to jump to related drills
 // ─────────────────────────────────────────────────────────
-function MetricCell({ k, cur, tgt, reverse, theme }) {
+function MetricCell({ k, cur, tgt, reverse, theme, onClick }) {
   const meta = window.STAT_META?.[k];
   if (!meta || cur == null || tgt == null) return null;
   const gap = reverse ? (cur - tgt) : (tgt - cur);
@@ -480,12 +506,30 @@ function MetricCell({ k, cur, tgt, reverse, theme }) {
     : (cur / tgt) * 100));
   const dispCur = meta.decimals ? cur.toFixed(meta.decimals) : cur;
   const dispTgt = meta.decimals ? tgt.toFixed(meta.decimals) : tgt;
+  const Wrapper = onClick ? 'button' : 'div';
   return (
-    <div style={{ minWidth: 0 }}>
+    <Wrapper
+      onClick={onClick}
+      style={{
+        minWidth: 0, cursor: onClick ? 'pointer' : 'default',
+        background: 'transparent', border: 'none', padding: 0, textAlign: 'left',
+        fontFamily: FONT.sans, color: theme.text,
+        position: 'relative',
+      }}>
       <div style={{
-        fontSize: 11, color: theme.textSec, letterSpacing: -0.1,
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      }}>{meta.label}</div>
+        display: 'flex', alignItems: 'center', gap: 4,
+      }}>
+        <div style={{
+          fontSize: 11, color: theme.textSec, letterSpacing: -0.1,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          flex: 1, minWidth: 0,
+        }}>{meta.label}</div>
+        {onClick && (
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.2,
+          }}>›</span>
+        )}
+      </div>
       <div style={{
         display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 4,
       }}>
@@ -511,7 +555,7 @@ function MetricCell({ k, cur, tgt, reverse, theme }) {
       }}>
         {ok ? '達成' : `→ ${dispTgt}${meta.unit}`}
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
