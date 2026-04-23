@@ -141,11 +141,29 @@ function HomeScreen({ theme, persona, go }) {
   );
   const section = (mt = 24) => ({ marginTop: mt });
 
-  // Subtle keyframes — path draw + fade only (no showy effects)
+  // Minimal, once-only animations — modern & non-repetitive.
+  //   - hmRiseIn: whole chart slides up 4px + fades in (200ms)
+  //   - hmBloom:  BEST dot expanding halo that fades (700ms, delayed)
+  //   - hmBestRise: BEST dot gently pops into place (300ms, delayed)
+  //   - hmPing: LATEST dot ring ping (600ms, delayed)
   const homeKeyframes = `
-    @keyframes hmSparkDraw { from { stroke-dashoffset: 640; } to { stroke-dashoffset: 0; } }
-    @keyframes hmFadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes hmDotIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+    @keyframes hmRiseIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes hmBloom {
+      0%   { opacity: 0.75; transform: scale(0.4); }
+      100% { opacity: 0;    transform: scale(5); }
+    }
+    @keyframes hmBestRise {
+      0%   { opacity: 0; transform: scale(0.3); }
+      60%  { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes hmPing {
+      0%   { opacity: 0.45; transform: scale(0.6); }
+      100% { opacity: 0;    transform: scale(3); }
+    }
   `;
 
   return (
@@ -178,7 +196,10 @@ function HomeScreen({ theme, persona, go }) {
               </span>
             </div>
           </div>
-          <div style={{ flex: 1, maxWidth: 180 }}>
+          <div style={{
+            flex: 1, maxWidth: 180,
+            animation: 'hmRiseIn 260ms ease-out both',
+          }}>
             <svg viewBox={`0 -10 ${spW} ${spH + 16}`}
               preserveAspectRatio="none"
               style={{ width: '100%', height: spH + 10, overflow: 'visible' }}>
@@ -188,47 +209,58 @@ function HomeScreen({ theme, persona, go }) {
               <text x={spW} y={goalY - 3} fontSize={7} fill={theme.textTer}
                 textAnchor="end" fontFamily={FONT.mono}>目標 {goalScore}</text>
 
-              {/* Animated spark path */}
+              {/* Spark path — instant, no drawing */}
               <path d={sparkPath} fill="none" stroke={theme.text} strokeWidth={1.3}
-                strokeLinecap="round" strokeLinejoin="round"
-                strokeDasharray={640}
-                strokeDashoffset={640}
-                style={{ animation: 'hmSparkDraw 1.1s 200ms cubic-bezier(0.22,1,0.36,1) forwards' }}/>
+                strokeLinecap="round" strokeLinejoin="round"/>
 
-              {/* Regular dots (skip best + latest) */}
+              {/* Regular dots — instant */}
               {sparkPoints.map((pt, i) => {
                 if (i === bestIdx || i === latestIdx) return null;
                 return (
                   <circle key={i} cx={pt.x} cy={pt.y} r={1.5}
-                    fill={theme.bg} stroke={theme.text} strokeWidth={1}
-                    style={{
-                      transformOrigin: `${pt.x}px ${pt.y}px`, transformBox: 'fill-box',
-                      animation: `hmDotIn 300ms ${700 + i * 80}ms both`, opacity: 0,
-                    }}/>
+                    fill={theme.bg} stroke={theme.text} strokeWidth={1}/>
                 );
               })}
 
-              {/* BEST — subtle gold dot accent (only thing colored on the chart) */}
+              {/* BEST — bloom halo + gold dot pops into place */}
               {bestIdx >= 0 && (
-                <g style={{
-                  transformOrigin: `${sparkPoints[bestIdx].x}px ${sparkPoints[bestIdx].y}px`,
-                  transformBox: 'fill-box',
-                  animation: 'hmDotIn 400ms 1200ms both', opacity: 0,
-                }}>
+                <>
+                  {/* Bloom halo — expands out and fades once */}
                   <circle cx={sparkPoints[bestIdx].x} cy={sparkPoints[bestIdx].y} r={3.2}
-                    fill={BEST_DOT_SOFT} stroke={BEST_DOT} strokeWidth={0.8}/>
-                </g>
+                    fill={BEST_DOT_SOFT}
+                    style={{
+                      transformOrigin: `${sparkPoints[bestIdx].x}px ${sparkPoints[bestIdx].y}px`,
+                      transformBox: 'fill-box',
+                      animation: 'hmBloom 900ms 350ms cubic-bezier(0.22, 1, 0.36, 1) both',
+                      opacity: 0, pointerEvents: 'none',
+                    }}/>
+                  {/* Gold dot — gentle pop-in to emphasize "level" */}
+                  <g style={{
+                    transformOrigin: `${sparkPoints[bestIdx].x}px ${sparkPoints[bestIdx].y}px`,
+                    transformBox: 'fill-box',
+                    animation: 'hmBestRise 450ms 320ms cubic-bezier(0.16, 1, 0.3, 1) both',
+                    opacity: 0,
+                  }}>
+                    <circle cx={sparkPoints[bestIdx].x} cy={sparkPoints[bestIdx].y} r={3.2}
+                      fill={BEST_DOT_SOFT} stroke={BEST_DOT} strokeWidth={0.8}/>
+                  </g>
+                </>
               )}
 
-              {/* LATEST — filled accent dot */}
+              {/* LATEST — ring ping + filled accent dot */}
               {latestIdx >= 0 && latestIdx !== bestIdx && (
-                <circle cx={sparkPoints[latestIdx].x} cy={sparkPoints[latestIdx].y} r={2.4}
-                  fill={theme.text} stroke={theme.bg} strokeWidth={1}
-                  style={{
-                    transformOrigin: `${sparkPoints[latestIdx].x}px ${sparkPoints[latestIdx].y}px`,
-                    transformBox: 'fill-box',
-                    animation: 'hmDotIn 400ms 1400ms both', opacity: 0,
-                  }}/>
+                <>
+                  <circle cx={sparkPoints[latestIdx].x} cy={sparkPoints[latestIdx].y} r={2.4}
+                    fill="none" stroke={theme.text} strokeWidth={1.2}
+                    style={{
+                      transformOrigin: `${sparkPoints[latestIdx].x}px ${sparkPoints[latestIdx].y}px`,
+                      transformBox: 'fill-box',
+                      animation: 'hmPing 700ms 500ms ease-out both',
+                      opacity: 0, pointerEvents: 'none',
+                    }}/>
+                  <circle cx={sparkPoints[latestIdx].x} cy={sparkPoints[latestIdx].y} r={2.4}
+                    fill={theme.text} stroke={theme.bg} strokeWidth={1}/>
+                </>
               )}
             </svg>
           </div>

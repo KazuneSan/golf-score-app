@@ -19,9 +19,10 @@ function RoundSetupScreen({ theme, persona, go }) {
     return preferred.color;
   });
 
-  // Practice mode — round is flagged as practice (doesn't affect averages)
-  const roundMode = window.__roundMode || 'scoring';
-  const isPractice = roundMode === 'practice';
+  // Practice mode — user can toggle here on this screen. Defaults based on entry point.
+  const [isPractice, setIsPractice] = React.useState(
+    () => (window.__roundMode || 'scoring') === 'practice'
+  );
   const [practiceChallenges, setPracticeChallenges] = React.useState([]);
   const [challengeSearch, setChallengeSearch] = React.useState('');
 
@@ -63,7 +64,7 @@ function RoundSetupScreen({ theme, persona, go }) {
       holes: rounHoles,
       memo: '',
       status: 'in-progress', // 'in-progress' | 'completed'
-      mode: roundMode, // 'scoring' | 'practice'
+      mode: isPractice ? 'practice' : 'scoring',
       practiceChallenges: isPractice ? practiceChallenges : [],
     };
     window.__roundEditHole = null;
@@ -128,8 +129,58 @@ function RoundSetupScreen({ theme, persona, go }) {
         </div>
       </div>
 
+      {/* Practice-mode toggle — can flip anytime on this screen */}
+      <div
+        onClick={() => setIsPractice(v => !v)}
+        style={{
+          marginTop: 18, padding: '12px 14px',
+          background: isPractice ? theme.text : theme.surface,
+          color: isPractice ? theme.bg : theme.text,
+          border: `1.5px solid ${isPractice ? theme.text : theme.border}`,
+          borderRadius: 8, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}
+      >
+        {/* Checkbox */}
+        <div style={{
+          width: 22, height: 22, borderRadius: 5, flexShrink: 0,
+          background: isPractice ? theme.bg : 'transparent',
+          border: `1.5px solid ${isPractice ? theme.bg : theme.borderStrong}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {isPractice && (
+            <svg width="13" height="13" viewBox="0 0 12 12">
+              <path d="M2 6 L 5 9 L 10 3" stroke={theme.text} strokeWidth="2.2"
+                fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            display: 'flex', alignItems: 'baseline', gap: 8,
+          }}>
+            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: -0.2 }}>
+              練習モード
+            </span>
+            <span style={{
+              fontFamily: FONT.mono, fontSize: 9, letterSpacing: 0.6,
+              textTransform: 'uppercase', fontWeight: 600,
+              opacity: 0.65,
+            }}>
+              {isPractice ? 'ON' : 'OFF'}
+            </span>
+          </div>
+          <div style={{
+            fontSize: 11, marginTop: 3, lineHeight: 1.55,
+            opacity: isPractice ? 0.85 : 0.6,
+          }}>
+            課題別 ○△× を記録 · 平均スコアには反映されません
+          </div>
+        </div>
+      </div>
+
       {/* Start side */}
-      <div style={{ marginTop: 22 }}>
+      <div style={{ marginTop: 18 }}>
         {label('スタート')}
         <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
           <SegBtn on={startSide === 'OUT'} onClick={() => setStartSide('OUT')}>OUT（1–9）</SegBtn>
