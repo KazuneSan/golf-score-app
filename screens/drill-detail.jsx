@@ -518,6 +518,17 @@ function DrillDiagram({ variant, theme, view }) {
 // ─────────────────────────────────────────────────────────────
 function DrillDetailScreen({ theme, drill, isDone, onToggleDone, onBack }) {
   const [view, setView] = React.useState('top');
+  const [tab, setTab] = React.useState('steps'); // steps | mistakes | check
+
+  // Narration ticker — cycles through drill.steps alongside the animation
+  const [narIdx, setNarIdx] = React.useState(0);
+  React.useEffect(() => {
+    if (!drill?.steps || drill.steps.length === 0) return;
+    const iv = setInterval(() => {
+      setNarIdx(i => (i + 1) % drill.steps.length);
+    }, 2800);
+    return () => clearInterval(iv);
+  }, [drill?.steps]);
 
   if (!drill) {
     return (
@@ -528,145 +539,248 @@ function DrillDetailScreen({ theme, drill, isDone, onToggleDone, onBack }) {
     );
   }
 
+  const currentStep = drill.steps?.[narIdx];
+  const tabs = [
+    { k: 'steps',    label: '手順', count: drill.steps?.length || 0 },
+    { k: 'mistakes', label: 'ミス', count: drill.mistakes?.length || 0 },
+    { k: 'check',    label: 'チェック', count: drill.checkpoints?.length || 0 },
+  ].filter(t => t.count > 0);
+
+  // Inject once — narration fade keyframe
+  const detailKeyframes = `
+    @keyframes ddNarrIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  `;
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', color: theme.text, fontFamily: FONT.sans }}>
-      {/* Header */}
-      <div style={{ padding: '4px 16px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button onClick={onBack} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, color: theme.textSec, fontSize: 13 }}>
+      <style>{detailKeyframes}</style>
+
+      {/* Compact header */}
+      <div style={{ padding: '4px 16px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button onClick={onBack} style={{
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', gap: 4, color: theme.textSec, fontSize: 13,
+        }}>
           {Icon.chevL(theme.textSec, 16)} 戻る
         </button>
-        <div style={{ fontSize: 13, fontWeight: 600 }}>ドリル解説</div>
+        <div style={{ fontSize: 12.5, fontWeight: 600 }}>ドリル解説</div>
         <div style={{ width: 40 }}/>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto' }} className="hide-scroll">
-        {/* Title */}
-        <div style={{ padding: '4px 16px 12px' }}>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 8 }}>
+        {/* Title row — pill + time + name, compact */}
+        <div style={{ padding: '2px 16px 10px' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
             <Pill theme={theme} tone="accent">{drill.condition}</Pill>
-            <span style={{ fontFamily: FONT.mono, fontSize: 11, color: theme.textSec }}>{drill.time}</span>
+            <span style={{ fontFamily: FONT.mono, fontSize: 10.5, color: theme.textSec, letterSpacing: 0.3 }}>
+              {drill.time}
+            </span>
+            {drill.equipment?.length > 0 && (
+              <span style={{ fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, marginLeft: 4, letterSpacing: 0.3 }}>
+                · {drill.equipment.join(' / ')}
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.6 }}>{drill.name}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.4, lineHeight: 1.2 }}>
+            {drill.name}
+          </div>
+          {drill.purpose && (
+            <div style={{ fontSize: 12, color: theme.textSec, marginTop: 4, lineHeight: 1.55 }}>
+              {drill.purpose}
+            </div>
+          )}
         </div>
 
-        {/* Diagram with view toggle */}
-        <div style={{ padding: '0 16px 14px' }}>
+        {/* Hero: animated diagram + narration ticker */}
+        <div style={{ padding: '0 16px 12px' }}>
           <Card theme={theme} padding={0} style={{ overflow: 'hidden' }}>
             <div style={{ aspectRatio: '320/260', background: theme.surfaceAlt }}>
               <DrillDiagram variant={drill.setup} theme={theme} view={view}/>
             </div>
+
+            {/* Narration row — cycles synchronized with animation loop */}
+            {currentStep && (
+              <div
+                key={narIdx}
+                style={{
+                  display: 'flex', gap: 12, alignItems: 'center',
+                  padding: '10px 14px',
+                  background: theme.surface, borderTop: `1px solid ${theme.border}`,
+                  animation: 'ddNarrIn 320ms ease-out both',
+                }}
+              >
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  background: theme.text, color: theme.bg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: FONT.mono, fontSize: 12, fontWeight: 700,
+                }}>{currentStep.n}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: -0.1 }}>{currentStep.t}</div>
+                  <div style={{
+                    fontSize: 11, color: theme.textSec, marginTop: 2, lineHeight: 1.45,
+                    overflow: 'hidden', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                  }}>{currentStep.d}</div>
+                </div>
+                {/* Step dots */}
+                <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                  {drill.steps.map((_, i) => (
+                    <div key={i} style={{
+                      width: 4, height: 4, borderRadius: '50%',
+                      background: i === narIdx ? theme.text : theme.border,
+                      transition: 'background .2s',
+                    }}/>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* View toggle */}
             <div style={{ display: 'flex', borderTop: `1px solid ${theme.border}` }}>
               {[
-                { k: 'top',   label: '俯瞰ビュー' },
+                { k: 'top',   label: '俯瞰' },
                 { k: 'setup', label: 'セットアップ' },
               ].map(t => (
                 <button key={t.k} onClick={()=>setView(t.k)} style={{
-                  flex: 1, padding: '11px 8px',
+                  flex: 1, padding: '10px 8px',
                   background: view===t.k ? theme.surface : 'transparent',
                   color: view===t.k ? theme.text : theme.textSec,
                   border: 'none',
                   borderRight: t.k==='top' ? `1px solid ${theme.border}` : 'none',
-                  fontFamily: FONT.sans, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                }}>{t.label}</button>
+                  fontFamily: FONT.sans, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                }}>{t.label}ビュー</button>
               ))}
             </div>
           </Card>
         </div>
 
-        {/* Purpose */}
-        <Section theme={theme} label="目的" icon="●">
-          <div style={{ fontSize: 14, lineHeight: 1.65 }}>{drill.purpose}</div>
-        </Section>
-
-        {/* Equipment */}
-        <Section theme={theme} label="必要な道具">
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {drill.equipment.map((e, i) => (
-              <span key={i} style={{
-                background: theme.chipBg, color: theme.text,
-                padding: '6px 11px', borderRadius: 999,
-                fontSize: 12, fontWeight: 500,
-              }}>{e}</span>
-            ))}
-          </div>
-        </Section>
-
-        {/* Steps */}
-        <Section theme={theme} label="手順">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {drill.steps.map(s => (
-              <div key={s.n} style={{ display: 'flex', gap: 12 }}>
+        {/* Pass condition — compact inline banner */}
+        {drill.pass && (
+          <div style={{ padding: '0 16px 12px' }}>
+            <div style={{
+              padding: '10px 12px',
+              background: theme.accentSoft, color: theme.accentInk,
+              borderRadius: 8,
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                background: theme.text, color: theme.bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 14,
+              }}>★</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                  width: 28, height: 28, borderRadius: 999, flexShrink: 0,
-                  background: theme.text, color: theme.bg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: FONT.mono, fontSize: 13, fontWeight: 700,
-                }}>{s.n}</div>
-                <div style={{ flex: 1, paddingTop: 2 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{s.t}</div>
-                  <div style={{ fontSize: 13, color: theme.textSec, marginTop: 3, lineHeight: 1.55 }}>{s.d}</div>
-                </div>
+                  fontFamily: FONT.mono, fontSize: 9, letterSpacing: 0.8,
+                  textTransform: 'uppercase', opacity: 0.7, fontWeight: 700,
+                }}>合格ライン</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 2 }}>{drill.pass.text}</div>
+                {drill.pass.sub && (
+                  <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2 }}>{drill.pass.sub}</div>
+                )}
               </div>
-            ))}
+            </div>
           </div>
-        </Section>
+        )}
 
-        {/* Pass condition */}
-        <div style={{ padding: '6px 16px 14px' }}>
-          <Card theme={theme} padding={14} style={{ background: theme.accentSoft, border: 'none', color: theme.accentInk }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', opacity: 0.75 }}>合格ライン</div>
-            <div style={{ fontSize: 16, fontWeight: 700, marginTop: 5 }}>{drill.pass.text}</div>
-            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 3 }}>{drill.pass.sub}</div>
-          </Card>
-        </div>
+        {/* Tabs — collapse 3 sections into 1 */}
+        {tabs.length > 0 && (
+          <div style={{ padding: '0 16px 14px' }}>
+            <div style={{
+              display: 'flex', gap: 0,
+              borderBottom: `1px solid ${theme.border}`,
+              marginBottom: 10,
+            }}>
+              {tabs.map(t => {
+                const on = tab === t.k;
+                return (
+                  <button key={t.k} onClick={() => setTab(t.k)} style={{
+                    flex: 1, padding: '9px 0',
+                    background: 'transparent', border: 'none',
+                    color: on ? theme.text : theme.textSec,
+                    fontFamily: FONT.sans, fontSize: 12.5,
+                    fontWeight: on ? 700 : 500, cursor: 'pointer',
+                    borderBottom: `2px solid ${on ? theme.text : 'transparent'}`,
+                    marginBottom: -1, letterSpacing: -0.1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}>
+                    <span>{t.label}</span>
+                    <span style={{
+                      fontFamily: FONT.mono, fontSize: 10,
+                      color: on ? theme.textSec : theme.textTer,
+                    }}>{t.count}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Mistakes */}
-        <Section theme={theme} label="よくあるミス">
-          <Card theme={theme} padding={0}>
-            {drill.mistakes.map((m, i, arr) => (
-              <div key={i} style={{
-                display: 'flex', gap: 12, padding: '12px 14px',
-                borderBottom: i < arr.length - 1 ? `1px solid ${theme.border}` : 'none',
-              }}>
-                <div style={{
-                  width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                  background: 'rgba(178,58,42,0.1)', color: theme.danger,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 700,
-                }}>×</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700 }}>{m.t}</div>
-                  <div style={{ fontSize: 12, color: theme.textSec, marginTop: 3, lineHeight: 1.55 }}>{m.d}</div>
-                </div>
+            {tab === 'steps' && drill.steps && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {drill.steps.map(s => (
+                  <div key={s.n} style={{ display: 'flex', gap: 10 }}>
+                    <div style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      background: theme.text, color: theme.bg,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: FONT.mono, fontSize: 11, fontWeight: 700, marginTop: 1,
+                    }}>{s.n}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: -0.1 }}>{s.t}</div>
+                      <div style={{ fontSize: 12, color: theme.textSec, marginTop: 2, lineHeight: 1.55 }}>{s.d}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </Card>
-        </Section>
+            )}
 
-        {/* Checkpoints */}
-        <Section theme={theme} label="チェックポイント">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {drill.checkpoints.map((c, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <div style={{
-                  width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 1,
-                  background: 'rgba(47,125,74,0.15)', color: theme.good,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{Icon.check(theme.good, 12)}</div>
-                <div style={{ fontSize: 13.5, lineHeight: 1.55, flex: 1 }}>{c}</div>
+            {tab === 'mistakes' && drill.mistakes && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {drill.mistakes.map((m, i) => (
+                  <div key={i} style={{
+                    display: 'flex', gap: 10, padding: '10px 12px',
+                    background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 6,
+                  }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 1,
+                      background: 'rgba(178,58,42,0.1)', color: theme.danger,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 11, fontWeight: 700,
+                    }}>×</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700 }}>{m.t}</div>
+                      <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 2, lineHeight: 1.5 }}>{m.d}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+
+            {tab === 'check' && drill.checkpoints && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {drill.checkpoints.map((c, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: 16, height: 16, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                      background: 'rgba(47,125,74,0.15)', color: theme.good,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{Icon.check(theme.good, 10)}</div>
+                    <div style={{ fontSize: 12.5, lineHeight: 1.55, flex: 1 }}>{c}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </Section>
+        )}
 
-        <div style={{ height: 24 }}/>
+        <div style={{ height: 8 }}/>
       </div>
 
-      {/* Footer */}
-      <div style={{ padding: '12px 16px 14px', display: 'flex', gap: 10, borderTop: `1px solid ${theme.border}` }}>
-        <TapBtn theme={theme} variant="ghost" onClick={onBack} style={{ minWidth: 74 }}>閉じる</TapBtn>
-        <TapBtn theme={theme} variant={isDone ? 'ghost' : 'primary'} full onClick={onToggleDone}>
-          {isDone ? '✓ 完了済み（取り消し）' : 'このドリルを完了にする'}
+      {/* Footer — compact */}
+      <div style={{ padding: '10px 16px 12px', display: 'flex', gap: 8, borderTop: `1px solid ${theme.border}` }}>
+        <TapBtn theme={theme} variant="ghost" onClick={onBack} style={{ minWidth: 68, padding: '11px 0' }}>閉じる</TapBtn>
+        <TapBtn theme={theme} variant={isDone ? 'ghost' : 'primary'} full onClick={onToggleDone} style={{ padding: '11px 0' }}>
+          {isDone ? '✓ 完了済み（取り消し）' : '完了にする'}
         </TapBtn>
       </div>
     </div>
