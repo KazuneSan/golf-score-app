@@ -109,17 +109,14 @@ function PracticeHub({ theme, go, challenges, challenge, setChallenge, completio
       </div>
 
       <div style={{ flex: 1, overflow: 'auto' }} className="hide-scroll">
-        {/* Intro */}
-        <div style={{ padding: '8px 16px 18px' }}>
+        {/* Small header — no verbose intro */}
+        <div style={{ padding: '10px 16px 8px' }}>
           <div style={{
             fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
             letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500,
-          }}>PRACTICE</div>
-          <div style={{ fontSize: 20, fontWeight: 700, marginTop: 10, letterSpacing: -0.4, lineHeight: 1.35 }}>
-            何をしにきた？
-          </div>
-          <div style={{ fontSize: 12.5, color: theme.textSec, marginTop: 6, lineHeight: 1.65 }}>
-            スコアを伸ばす流れは、<b style={{ color: theme.text }}>① 課題を潰す</b> → <b style={{ color: theme.text }}>② 潰せたか確かめる</b>。
+          }}>Practice</div>
+          <div style={{ fontSize: 18, fontWeight: 700, marginTop: 6, letterSpacing: -0.3 }}>
+            練習モード
           </div>
         </div>
 
@@ -127,20 +124,22 @@ function PracticeHub({ theme, go, challenges, challenge, setChallenge, completio
         <FavoritesSection theme={theme}
           onOpen={(topId) => { setChallenge(topId); onDrill(); }}/>
 
-        {/* ① ドリルで課題を潰す */}
-        <SectionBranch
+        {/* ━━━ SECTION 1: DRILL ━━━ */}
+        <ModeSection
           theme={theme}
-          step="①"
-          title="ドリルで課題を潰す"
-          sub="課題 → ドリル 手順で弱点を1つずつ"
-          primary
+          tag="DRILL"
+          title="課題を潰す"
+          sub="弱点の要素を、ひとつずつ反復で磨き上げる"
+          icon={
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
+              <circle cx="12" cy="12" r="5.5" stroke="currentColor" strokeWidth="1.6"/>
+              <circle cx="12" cy="12" r="2" fill="currentColor"/>
+            </svg>
+          }
         >
           <div style={{
-            fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
-            letterSpacing: 0.6, textTransform: 'uppercase', fontWeight: 500,
-            marginBottom: 8,
-          }}>どの課題を潰す？</div>
-          <div style={{
+            padding: '0 16px 14px',
             display: 'flex', flexDirection: 'column', gap: 8,
           }}>
             {Object.entries(challenges).map(([k, c]) => (
@@ -155,79 +154,51 @@ function PracticeHub({ theme, go, challenges, challenge, setChallenge, completio
               />
             ))}
           </div>
-        </SectionBranch>
+        </ModeSection>
 
-        {/* ② ラウンドで課題を潰せているかチェック */}
-        <SectionBranch
+        {/* ━━━ SECTION 2: ROUND TEST ━━━ */}
+        <ModeSection
           theme={theme}
-          step="②"
-          title="ラウンドで潰せているかチェック"
-          sub="ドリルが本番で出せるか、ラウンドで検証"
+          tag="ROUND TEST"
+          title="ラウンドで検証"
+          sub="ドリルの成果が本番で出せたか、○△× で記録"
+          icon={
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M6 3 L 6 21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M6 3 L 18 6 L 6 9 Z" fill="currentColor"/>
+              <ellipse cx="10" cy="21" rx="7" ry="1.2" fill="currentColor" opacity="0.25"/>
+            </svg>
+          }
         >
-          <button onClick={onRoundTest} style={{
-            width: '100%', background: 'transparent', color: theme.text,
-            border: `1px solid ${theme.borderStrong}`, borderRadius: 8,
-            padding: '14px 14px', cursor: 'pointer', fontFamily: FONT.sans,
-            textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
-          }}>
-            <div style={{
-              width: 38, height: 38, borderRadius: 8, flexShrink: 0,
-              background: theme.text, color: theme.bg,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: FONT.mono, fontSize: 16, fontWeight: 700,
+          <div style={{ padding: '0 16px 14px' }}>
+            <button onClick={() => { window.__roundMode = 'practice'; go('course-select'); }} style={{
+              width: '100%', background: theme.surface, color: theme.text,
+              border: `1px solid ${theme.borderStrong}`, borderRadius: 8,
+              padding: '14px 14px', cursor: 'pointer', fontFamily: FONT.sans,
+              textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
             }}>
-              ⛳
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: -0.2 }}>
-                ラウンドテストを始める
-              </div>
-              <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 3, lineHeight: 1.5 }}>
-                今日の課題の出来をホールごとに ○ △ × で記録
-              </div>
-            </div>
-            <span style={{ fontFamily: FONT.mono, fontSize: 14, color: theme.textSec }}>→</span>
-          </button>
-
-          <div style={{
-            marginTop: 8, fontSize: 10.5, color: theme.textTer,
-            lineHeight: 1.6, fontFamily: FONT.mono, letterSpacing: 0.3,
-          }}>
-            ヒント: 各課題のドリル画面には、<br/>
-            その課題の目標指標だけをテストできる「Clubhouse Challenge」もあります。
-          </div>
-        </SectionBranch>
-
-        {/* 最近の練習 */}
-        <div style={{ padding: '14px 16px 8px' }}>
-          <div style={{
-            fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
-            letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500, marginBottom: 8,
-          }}>最近の練習</div>
-          <div style={{ border: `1px solid ${theme.border}`, borderRadius: 8, background: theme.surface, overflow: 'hidden' }}>
-            {[
-              { t: 'ドリル',          d: '4/20 夜 · 距離感ドリル',   r: '3 種完了',        tag: 'drill' },
-              { t: 'ラウンドテスト',  d: '4/18 · 鳴沢GC',            r: '○4 / △3 / ×2',   tag: 'round' },
-              { t: 'ドリル',          d: '4/15 · 方向性ドリル',      r: '2 種完了',        tag: 'drill' },
-            ].map((x, i, arr) => (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px',
-                borderBottom: i < arr.length - 1 ? `1px solid ${theme.border}` : 'none',
-              }}>
-                <span style={{
-                  fontFamily: FONT.mono, fontSize: 9, letterSpacing: 0.5,
-                  border: `1px solid ${theme.borderStrong}`, padding: '2px 6px', borderRadius: 3,
-                  color: theme.textSec, fontWeight: 500,
-                }}>{x.tag==='drill'?'DRILL':'TEST'}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{x.t}</div>
-                  <div style={{ fontSize: 11, color: theme.textSec, marginTop: 2 }}>{x.d}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: -0.2 }}>
+                  練習ラウンドを始める
                 </div>
-                <div style={{ fontFamily: FONT.mono, fontSize: 11, color: theme.textSec }}>{x.r}</div>
+                <div style={{ fontSize: 11, color: theme.textSec, marginTop: 3, lineHeight: 1.5 }}>
+                  コース選択 → 確認課題を設定 → ○△× 記録
+                </div>
               </div>
-            ))}
+              <span style={{ fontFamily: FONT.mono, fontSize: 14, color: theme.textSec }}>→</span>
+            </button>
+
+            <div style={{
+              marginTop: 10, fontSize: 10.5, color: theme.textTer,
+              lineHeight: 1.6, fontFamily: FONT.mono, letterSpacing: 0.3,
+            }}>
+              平均スコアには反映されず、練習ログとしていつでも見返せます
+            </div>
           </div>
-        </div>
+        </ModeSection>
+
+        {/* 練習ラウンド履歴 */}
+        <PracticeRoundHistory theme={theme} go={go}/>
 
         <div style={{ height: 20 }}/>
       </div>
@@ -236,29 +207,37 @@ function PracticeHub({ theme, go, challenges, challenge, setChallenge, completio
 }
 
 // ─────────────────────────────────────────────────────────
-// SectionBranch — a big step block with step number + title + sub + content
-// Visually distinct: primary branch has slightly heavier border-left
+// ModeSection — big visual section header with icon + tag + title + sub,
+// then child content below. Visually anchors each mode of the hub.
 // ─────────────────────────────────────────────────────────
-function SectionBranch({ theme, step, title, sub, primary, children }) {
+function ModeSection({ theme, icon, tag, title, sub, children }) {
   return (
-    <div style={{
-      padding: '14px 16px 8px',
-      borderTop: `1px solid ${theme.border}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
+    <div style={{ marginTop: 18, borderTop: `1px solid ${theme.border}`, paddingTop: 14 }}>
+      <div style={{
+        padding: '0 16px 12px',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}>
         <div style={{
-          fontFamily: FONT.mono, fontSize: 14, fontWeight: 700,
-          color: primary ? theme.text : theme.textSec, letterSpacing: 0.2,
-          width: 22, textAlign: 'center', flexShrink: 0,
-        }}>{step}</div>
+          width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+          background: theme.text, color: theme.bg,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {icon}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: -0.3 }}>{title}</div>
-          <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 2 }}>{sub}</div>
+          <div style={{
+            fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
+            letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 600,
+          }}>{tag}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: -0.3, marginTop: 2 }}>
+            {title}
+          </div>
+          <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 3, lineHeight: 1.55 }}>
+            {sub}
+          </div>
         </div>
       </div>
-      <div style={{ paddingTop: 8 }}>
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
@@ -678,6 +657,95 @@ function ClubhouseChallenge({ theme, lib, allDone, onOpenTest }) {
         fontFamily: FONT.mono, fontSize: 18, fontWeight: 500, opacity: 0.85,
       }}>→</span>
     </button>
+  );
+}
+
+// Practice round history — lists past practice rounds with per-challenge ○△× summary.
+function PracticeRoundHistory({ theme, go }) {
+  const rounds = (() => {
+    try { return JSON.parse(localStorage.getItem('gs_practice_rounds') || '[]').slice(0, 8); }
+    catch { return []; }
+  })();
+  if (rounds.length === 0) return null;
+
+  const reopen = (round) => {
+    // Restore state so the Round Complete screen can replay it
+    window.__roundState = {
+      course: {
+        id: round.course?.id,
+        name: round.course?.name || 'コース',
+        par: round.course?.par || round.holes.reduce((a, h) => a + h.par, 0),
+        holes: round.holes,
+      },
+      teeColor: round.teeColor,
+      startSide: round.startSide,
+      isHalf: round.isHalf,
+      target: round.target,
+      startedAt: round.startedAt,
+      endedAt: round.endedAt,
+      holes: round.holes,
+      memo: round.memo || '',
+      mode: 'practice',
+      practiceChallenges: round.practiceChallenges || [],
+      status: 'finalized',
+    };
+    go('round-complete');
+  };
+
+  return (
+    <div style={{ padding: '14px 16px 8px' }}>
+      <div style={{
+        fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
+        letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500, marginBottom: 8,
+      }}>練習ラウンド履歴</div>
+      <div style={{ border: `1px solid ${theme.border}`, borderRadius: 8, background: theme.surface, overflow: 'hidden' }}>
+        {rounds.map((r, i) => {
+          const date = new Date(r.endedAt || r.startedAt).toLocaleDateString('ja-JP', {
+            month: 'numeric', day: 'numeric',
+          });
+          // Aggregate ○△× across all challenges
+          const counts = { '○': 0, '△': 0, '×': 0 };
+          (r.holes || []).forEach(h => {
+            Object.values(h.challengeResults || {}).forEach(v => {
+              if (counts[v] != null) counts[v]++;
+            });
+          });
+          const challengeLabels = (r.practiceChallenges || [])
+            .map(k => window.DRILL_LIBRARY?.[k]?.challenge || k);
+          return (
+            <div key={i}
+              onClick={() => reopen(r)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px',
+                borderBottom: i < rounds.length - 1 ? `1px solid ${theme.border}` : 'none',
+                cursor: 'pointer',
+              }}>
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 9, letterSpacing: 0.5,
+                border: `1px solid ${theme.borderStrong}`, padding: '2px 6px', borderRadius: 3,
+                color: theme.textSec, fontWeight: 600,
+              }}>PRACTICE</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: -0.1,
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {r.course?.name || 'コース'}
+                </div>
+                <div style={{ fontSize: 10.5, color: theme.textSec, marginTop: 2,
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {date} · {challengeLabels.slice(0, 2).join(' / ')}
+                  {challengeLabels.length > 2 && ` +${challengeLabels.length - 2}`}
+                </div>
+              </div>
+              <div style={{ fontFamily: FONT.mono, fontSize: 10, color: theme.textSec, flexShrink: 0, display: 'flex', gap: 6 }}>
+                <span style={{ color: theme.good }}>○{counts['○']}</span>
+                <span>△{counts['△']}</span>
+                <span style={{ color: theme.warn }}>×{counts['×']}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

@@ -100,9 +100,8 @@ function HomeScreen({ theme, persona, go }) {
   const avgScore = p.avgScore;
   const goalScore = parseInt(p.nextGoal.match(/平均\s*(\d+)/)?.[1] || '99', 10);
 
-  const drillFocusKey = p.focus[0];
-  const tip = window.pickTip(drillFocusKey);
-  const drill = window.FOCUS_DRILL_PROGRESS[drillFocusKey] || {};
+  // Today's tip — rotated daily based on primary focus key
+  const tip = window.pickTip(p.focus[0]);
 
   const reverseSet = new Set(['threePutt', 'ob', 'avgPutt']);
 
@@ -291,7 +290,7 @@ function HomeScreen({ theme, persona, go }) {
 
       {/* ③ Primary actions */}
       <div style={{ ...section(14), display: 'flex', gap: 6 }}>
-        <button onClick={() => go('course-select')} style={{
+        <button onClick={() => { window.__roundMode = 'scoring'; go('course-select'); }} style={{
           flex: 1, background: theme.text, color: theme.bg, border: 'none',
           padding: '11px 0', borderRadius: 6, fontFamily: FONT.sans,
           fontSize: 12.5, fontWeight: 500, cursor: 'pointer',
@@ -396,68 +395,24 @@ function HomeScreen({ theme, persona, go }) {
         </div>
       </div>
 
-      {/* ⑥ 今日のドリル */}
+      {/* ⑥ 今日の一言 — standalone (drill progress removed) */}
       <div style={section(26)}>
-        {label('今日のドリル')}
+        {label('今日の一言')}
         <div style={{
-          marginTop: 10, border: `1px solid ${theme.border}`, borderRadius: 8,
-          padding: 14, background: theme.surface,
+          marginTop: 10, padding: '14px 14px',
+          border: `1px solid ${theme.border}`, borderRadius: 8,
+          background: theme.surface,
+          borderLeft: `3px solid ${theme.text}`,
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: -0.2 }}>{drill.drill}</div>
-            <div style={{ fontFamily: FONT.mono, fontSize: 11, color: theme.textSec }}>
-              {drill.done}/{drill.total}
-            </div>
+          <div style={{
+            fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
+            letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6,
+          }}>{tip.tag}</div>
+          <div style={{ fontSize: 13, lineHeight: 1.6, color: theme.text, letterSpacing: -0.1 }}>
+            「{tip.q}」
           </div>
-          <div style={{ display: 'flex', gap: 2, marginTop: 10 }}>
-            {Array.from({ length: drill.total }, (_, i) => (
-              <div key={i} style={{
-                flex: 1, height: 3, borderRadius: 1,
-                background: i < drill.done ? theme.text : theme.border,
-              }}/>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 14, marginTop: 10, fontFamily: FONT.mono, fontSize: 10, color: theme.textSec }}>
-            <span>命中 <span style={{ color: theme.text, fontWeight: 500 }}>{drill.accuracy}%</span></span>
-            <span>連続 <span style={{ color: theme.text, fontWeight: 500 }}>{drill.streak}日</span></span>
-          </div>
-
-          {/* Rotating tip */}
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${theme.border}` }}>
-            <div style={{
-              fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
-              letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6,
-            }}>{tip.tag} · 今日の一言</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.55, color: theme.text, letterSpacing: -0.1 }}>
-              「{tip.q}」
-            </div>
-            <div style={{ fontSize: 11, color: theme.textSec, marginTop: 6 }}>— {tip.who}</div>
-          </div>
-
-          <button onClick={() => go('practice')} style={{
-            marginTop: 12, width: '100%', background: 'transparent',
-            color: theme.text, border: `1px solid ${theme.borderStrong}`,
-            padding: '9px 0', borderRadius: 6, fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            fontFamily: FONT.sans,
-          }}>このドリルを始める →</button>
+          <div style={{ fontSize: 11, color: theme.textSec, marginTop: 8 }}>— {tip.who}</div>
         </div>
-      </div>
-
-      {/* ⑦ Bridge */}
-      <div style={{
-        ...section(14),
-        padding: '12px 14px', border: `1px solid ${theme.border}`, borderRadius: 8,
-        background: theme.surface, display: 'flex', alignItems: 'center', gap: 12,
-        cursor: 'pointer',
-      }} onClick={() => go('practice')}>
-        <div style={{ width: 2, height: 28, background: theme.text }}/>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 600 }}>この課題のドリル一覧へ</div>
-          <div style={{ fontSize: 11, color: theme.textSec, marginTop: 1 }}>
-            {drillFocusKey}を改善する · 条件別に分解
-          </div>
-        </div>
-        <span style={{ fontFamily: FONT.mono, fontSize: 12, color: theme.textSec }}>→</span>
       </div>
 
       {/* Analysis */}

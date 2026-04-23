@@ -19,6 +19,12 @@ function RoundSetupScreen({ theme, persona, go }) {
     return preferred.color;
   });
 
+  // Practice mode — round is flagged as practice (doesn't affect averages)
+  const roundMode = window.__roundMode || 'scoring';
+  const isPractice = roundMode === 'practice';
+  const [practiceChallenges, setPracticeChallenges] = React.useState([]);
+  const [challengeSearch, setChallengeSearch] = React.useState('');
+
   if (!course) {
     return <div style={{ padding: 20, fontFamily: FONT.sans, color: theme.text }}>読み込み中...</div>;
   }
@@ -41,6 +47,7 @@ function RoundSetupScreen({ theme, persona, go }) {
     const now = Date.now();
     const allHoles = course.holes.map(h => ({
       ...h, strokes: null, putts: null, ob: false, hazard: false,
+      challengeResults: {},  // per-hole { challengeKey: '○' | '△' | '×' }
     }));
     // Half round: only the selected side's 9 holes are played.
     const rounHoles = isHalf
@@ -56,6 +63,8 @@ function RoundSetupScreen({ theme, persona, go }) {
       holes: rounHoles,
       memo: '',
       status: 'in-progress', // 'in-progress' | 'completed'
+      mode: roundMode, // 'scoring' | 'practice'
+      practiceChallenges: isPractice ? practiceChallenges : [],
     };
     window.__roundEditHole = null;
     go('round');
@@ -164,6 +173,106 @@ function RoundSetupScreen({ theme, persona, go }) {
         </div>
       </div>
 
+      {/* Practice mode: challenge selector */}
+      {isPractice && (() => {
+        const lib = window.DRILL_LIBRARY || {};
+        const all = Object.entries(lib).map(([k, c]) => ({
+          k, label: c.challenge, sub: c.challengeSub, metric: c.goal?.metric,
+        }));
+        const q = challengeSearch.trim().toLowerCase();
+        const matched = q
+          ? all.filter(c => (c.label || '').toLowerCase().includes(q)
+                       || (c.sub || '').toLowerCase().includes(q)
+                       || (c.label || '').includes(challengeSearch)
+                       || (c.sub || '').includes(challengeSearch)
+                       || (c.metric || '').includes(challengeSearch))
+          : all;
+        const toggle = (k) => {
+          setPracticeChallenges(prev =>
+            prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]
+          );
+        };
+        return (
+          <div style={{ marginTop: 22, border: `2px solid ${theme.text}`, borderRadius: 8, padding: 14, background: theme.surface }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
+              {label('確認する課題')}
+              <span style={{ fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.4 }}>
+                PRACTICE · {practiceChallenges.length} 選択中
+              </span>
+            </div>
+            <div style={{ fontSize: 11.5, color: theme.textSec, lineHeight: 1.6, marginBottom: 10 }}>
+              ラウンド中の各ホールで、選んだ課題について「できた？」を ○△× で記録します。
+            </div>
+
+            {/* Search */}
+            <div style={{ position: 'relative', marginBottom: 10 }}>
+              <div style={{
+                position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                color: theme.textTer, pointerEvents: 'none',
+              }}>
+                <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                  <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.3"/>
+                  <path d="M9.5 9.5L13 13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <input
+                value={challengeSearch}
+                onChange={e => setChallengeSearch(e.target.value)}
+                placeholder="課題を検索（例: パター、OB）"
+                style={{
+                  width: '100%', padding: '9px 12px 9px 30px',
+                  background: theme.bg, color: theme.text,
+                  border: `1px solid ${theme.border}`, borderRadius: 6,
+                  fontFamily: FONT.sans, fontSize: 12.5, outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Challenge list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {matched.length === 0 ? (
+                <div style={{ fontSize: 11.5, color: theme.textSec, padding: '12px 0', textAlign: 'center' }}>
+                  一致する課題がありません
+                </div>
+              ) : matched.map(c => {
+                const on = practiceChallenges.includes(c.k);
+                return (
+                  <button key={c.k} onClick={() => toggle(c.k)} style={{
+                    background: on ? theme.text : 'transparent',
+                    color: on ? theme.bg : theme.text,
+                    border: `1px solid ${on ? theme.text : theme.border}`,
+                    borderRadius: 6, padding: '10px 12px',
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    cursor: 'pointer', fontFamily: FONT.sans, textAlign: 'left',
+                  }}>
+                    <div style={{
+                      width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                      background: on ? theme.bg : 'transparent',
+                      border: `1.5px solid ${on ? theme.bg : theme.borderStrong}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {on && (
+                        <svg width="10" height="10" viewBox="0 0 12 12">
+                          <path d="M2 6 L 5 9 L 10 3" stroke={theme.text} strokeWidth="2" fill="none"
+                            strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: -0.1 }}>{c.label}</div>
+                      <div style={{ fontSize: 10.5, opacity: 0.7, marginTop: 2 }}>
+                        {c.sub}{c.metric ? ` · ${c.metric}` : ''}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Weather */}
       <div style={{
         marginTop: 22, border: `1px solid ${theme.border}`, borderRadius: 8,
@@ -242,12 +351,20 @@ function RoundSetupScreen({ theme, persona, go }) {
 
       {/* Start */}
       <div style={{ marginTop: 20 }}>
-        <button onClick={start} style={{
-          width: '100%', background: theme.text, color: theme.bg, border: 'none',
-          padding: '14px 0', borderRadius: 8,
-          fontFamily: FONT.sans, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          letterSpacing: -0.1,
-        }}>ラウンド開始</button>
+        <button onClick={start}
+          disabled={isPractice && practiceChallenges.length === 0}
+          style={{
+            width: '100%', background: theme.text, color: theme.bg, border: 'none',
+            padding: '14px 0', borderRadius: 8,
+            fontFamily: FONT.sans, fontSize: 14, fontWeight: 600,
+            cursor: isPractice && practiceChallenges.length === 0 ? 'not-allowed' : 'pointer',
+            opacity: isPractice && practiceChallenges.length === 0 ? 0.35 : 1,
+            letterSpacing: -0.1,
+          }}>
+          {isPractice
+            ? (practiceChallenges.length === 0 ? '課題を1つ以上選んでください' : `練習ラウンド開始（${practiceChallenges.length}課題）`)
+            : 'ラウンド開始'}
+        </button>
         <div style={{ marginTop: 10, textAlign: 'center', fontSize: 11, color: theme.textTer }}>
           {startSide === 'OUT' ? '1番ホールから始まります' : '10番ホールから始まります'}
           {isHalf ? '（9ホール）' : ''} ·

@@ -85,17 +85,24 @@ function RoundResultScreen({ theme, persona, go }) {
     go('round');
   };
 
+  const isPractice = state?.mode === 'practice';
+  const practiceChallenges = state?.practiceChallenges || [];
+
   const finish = () => {
-    // Persist round history to localStorage so we can revisit later.
+    // Persist round history to localStorage. Practice rounds go to a separate bucket
+    // so they don't affect the user's average/score metrics.
     const endedAt = Date.now();
+    const storageKey = isPractice ? 'gs_practice_rounds' : 'gs_rounds';
     try {
-      const hist = JSON.parse(localStorage.getItem('gs_rounds') || '[]');
+      const hist = JSON.parse(localStorage.getItem(storageKey) || '[]');
       hist.unshift({
         course: { id: course.id, name: course.name, par: coursePar },
         teeColor: state.teeColor,
         startSide: state.startSide,
         isHalf: !!state.isHalf,
         target: state.target,
+        mode: state.mode || 'scoring',
+        practiceChallenges,
         startedAt: state.startedAt,
         endedAt,
         total, diff,
@@ -103,10 +110,11 @@ function RoundResultScreen({ theme, persona, go }) {
           no: h.no, par: h.par, hdcp: h.hdcp,
           strokes: h.strokes, putts: h.putts,
           ob: h.ob, hazard: h.hazard,
+          challengeResults: h.challengeResults || {},
         })),
         memo: memoText,
       });
-      localStorage.setItem('gs_rounds', JSON.stringify(hist.slice(0, 50)));
+      localStorage.setItem(storageKey, JSON.stringify(hist.slice(0, 100)));
     } catch (e) { /* noop */ }
     // Mark state as finalized + add endedAt so round-complete can read it.
     if (state) {
@@ -114,7 +122,8 @@ function RoundResultScreen({ theme, persona, go }) {
       state.endedAt = endedAt;
       state.status = 'finalized';
     }
-    // Don't clear __roundState yet — round-complete uses it.
+    // Clear the round-mode flag after saving
+    window.__roundMode = null;
     go('round-complete');
   };
 
@@ -197,7 +206,7 @@ function RoundResultScreen({ theme, persona, go }) {
           <div style={{
             fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
             letterSpacing: 0.8, textTransform: 'uppercase',
-          }}>Round · Result</div>
+          }}>{isPractice ? 'Practice Round · Result' : 'Round · Result'}</div>
           <div style={{
             fontSize: 14, fontWeight: 600, marginTop: 2,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
@@ -272,6 +281,73 @@ function RoundResultScreen({ theme, persona, go }) {
         {front.length > 0 && <HalfCard hs={front} from={0} title="OUT" tot={frontTot} par={frontPar}/>}
         {back.length > 0  && <HalfCard hs={back}  from={front.length > 0 ? 9 : 0} title="IN"  tot={backTot}  par={backPar}/>}
       </div>
+
+      {/* Practice mode — per-challenge ○△× summary */}
+      {isPractice && practiceChallenges.length > 0 && (
+        <div style={{
+          marginTop: 16, padding: '12px 14px',
+          border: `2px solid ${theme.text}`, borderRadius: 8,
+          background: theme.surface,
+        }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10,
+          }}>
+            {label('課題別 サマリー')}
+            <span style={{
+              fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
+              letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 600,
+            }}>Practice</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {practiceChallenges.map(ck => {
+              const lib = window.DRILL_LIBRARY?.[ck];
+              const marks = holes
+                .map(h => h.challengeResults?.[ck])
+                .filter(Boolean);
+              const counts = { '○': 0, '△': 0, '×': 0 };
+              marks.forEach(m => { if (counts[m] != null) counts[m]++; });
+              const total = marks.length;
+              const okRate = total ? Math.round((counts['○'] / total) * 100) : 0;
+              return (
+                <div key={ck}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: -0.1 }}>
+                      {lib?.challenge || ck}
+                    </div>
+                    <div style={{ fontFamily: FONT.mono, fontSize: 11, color: theme.textSec }}>
+                      {total ? `${total}ホール記録 · ${okRate}% OK` : '未記録'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 6, fontFamily: FONT.mono, fontSize: 11 }}>
+                    <span style={{ color: theme.good }}>○ {counts['○']}</span>
+                    <span style={{ color: theme.text }}>△ {counts['△']}</span>
+                    <span style={{ color: theme.warn }}>× {counts['×']}</span>
+                  </div>
+                  {/* stacked mini bar */}
+                  <div style={{
+                    display: 'flex', height: 4, marginTop: 6,
+                    borderRadius: 2, overflow: 'hidden', background: theme.border,
+                  }}>
+                    {total > 0 && (
+                      <>
+                        <div style={{ width: `${(counts['○']/total)*100}%`, background: theme.good }}/>
+                        <div style={{ width: `${(counts['△']/total)*100}%`, background: theme.borderStrong }}/>
+                        <div style={{ width: `${(counts['×']/total)*100}%`, background: theme.warn }}/>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{
+            fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer,
+            marginTop: 10, letterSpacing: 0.3,
+          }}>
+            ※ 練習ラウンドのため、スコアは平均には反映されません
+          </div>
+        </div>
+      )}
 
       {/* Putts / OB / Hazard summary */}
       <div style={{

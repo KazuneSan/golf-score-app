@@ -83,6 +83,15 @@ function RoundScreen({ theme, persona, go }) {
   const setPutt = (n) => update({ putts: n });
   const toggleField = (k) => update({ [k]: !hole[k] });
 
+  // Practice-mode per-hole challenge check: '○' | '△' | '×'
+  const setChallengeResult = (challengeKey, v) => {
+    const current = hole.challengeResults?.[challengeKey];
+    const next = current === v ? null : v;
+    update({ challengeResults: { ...(hole.challengeResults || {}), [challengeKey]: next } });
+  };
+  const isPractice = state?.mode === 'practice';
+  const practiceChallenges = state?.practiceChallenges || [];
+
   const next = () => {
     setHoleIdx(i => Math.min(total - 1, i + 1));
     setStrokesExtra(false);
@@ -473,6 +482,62 @@ function RoundScreen({ theme, persona, go }) {
             </div>
           )}
         </div>
+
+        {/* Practice mode — per-hole challenge checks */}
+        {isPractice && practiceChallenges.length > 0 && (
+          <div style={{
+            marginBottom: 16, padding: '12px 12px',
+            border: `2px solid ${theme.text}`, borderRadius: 8,
+            background: theme.surface,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              marginBottom: 10,
+            }}>
+              {label('このホールでできた？')}
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
+                letterSpacing: 0.4, textTransform: 'uppercase', fontWeight: 600,
+              }}>Practice</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {practiceChallenges.map(ck => {
+                const lib = window.DRILL_LIBRARY?.[ck];
+                const current = hole.challengeResults?.[ck];
+                return (
+                  <div key={ck} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: -0.1 }}>
+                        {lib?.challenge || ck}
+                      </div>
+                      <div style={{ fontSize: 10, color: theme.textSec, marginTop: 1 }}>
+                        {lib?.challengeSub || ''}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      {['○', '△', '×'].map(v => {
+                        const on = current === v;
+                        const accent = v === '○' ? theme.good : v === '×' ? theme.warn : theme.text;
+                        return (
+                          <button key={v} onClick={() => setChallengeResult(ck, v)} style={{
+                            width: 34, height: 34, borderRadius: 6,
+                            background: on ? accent : 'transparent',
+                            color: on ? '#fff' : accent,
+                            border: `1.5px solid ${accent}`,
+                            fontFamily: FONT.mono, fontSize: 15, fontWeight: 700,
+                            cursor: 'pointer', padding: 0,
+                          }}>{v}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* 発生時のみ — user-configured trackers (Settings) */}
         {enabledOptKeys.length > 0 && (
