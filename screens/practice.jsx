@@ -6,6 +6,17 @@ function PracticeScreen({ theme, go }) {
   const [challenge, setChallenge] = React.useState('putt');
   const [lastSession, setLastSession] = React.useState(null);
   const [activeDrillId, setActiveDrillId] = React.useState(null);
+
+  // Deep-link: if round-complete (or elsewhere) set __selectedDrillTop, jump
+  // straight into the drill phase for that challenge on mount.
+  React.useEffect(() => {
+    const sel = window.__selectedDrillTop;
+    if (sel) {
+      setChallenge(sel);
+      setPhase('drill');
+      window.__selectedDrillTop = null;
+    }
+  }, []);
   // drill completion state keyed by `${challenge}/${drillId}` → { done: bool, ts }
   const [completions, setCompletions] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('gs_drill_done') || '{}'); } catch { return {}; }
