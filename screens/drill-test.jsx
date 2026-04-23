@@ -190,6 +190,22 @@ function IntroPhase({ theme, lib, cfg, bestRecord, drill, cond, orderInChallenge
     ? new Date(bestRecord.ts).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' })
     : null;
 
+  // Drill-mode: fetch rich details (animation variant + steps / mistakes / checkpoints)
+  const details = cfg.isDrill && drill
+    ? (window.DRILL_DETAILS || {})[drill.id]
+    : null;
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const [detailTab, setDetailTab] = React.useState('steps');
+
+  // Narration ticker (drill mode only, synced with animation)
+  const steps = details?.steps || [];
+  const [narIdx, setNarIdx] = React.useState(0);
+  React.useEffect(() => {
+    if (!cfg.isDrill || steps.length === 0) return;
+    const iv = setInterval(() => setNarIdx(i => (i + 1) % steps.length), 2800);
+    return () => clearInterval(iv);
+  }, [cfg.isDrill, steps.length]);
+
   return (
     <div style={{ flex: 1, padding: '8px 20px 30px', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
       <div style={{
@@ -208,7 +224,7 @@ function IntroPhase({ theme, lib, cfg, bestRecord, drill, cond, orderInChallenge
 
       {cfg.isDrill ? (
         <div style={{
-          fontSize: 12.5, color: theme.textSec, lineHeight: 1.6, marginBottom: 16,
+          fontSize: 12.5, color: theme.textSec, lineHeight: 1.6, marginBottom: 12,
           animation: 'dtFadeUp 400ms 400ms both',
         }}>
           {cfg.subtitle}
@@ -223,6 +239,190 @@ function IntroPhase({ theme, lib, cfg, bestRecord, drill, cond, orderInChallenge
           目標は <b style={{ color: theme.text }}>{lib.goal.target}% ({lib.goal.targetLabel})</b>。
         </div>
       )}
+
+      {/* Drill-mode: animated preview + collapsible details */}
+      {cfg.isDrill && details?.setup && window.DrillDiagram && (
+        <div style={{
+          marginBottom: 12, border: `1px solid ${theme.border}`, borderRadius: 8,
+          overflow: 'hidden', background: theme.surface,
+          animation: 'dtFadeUp 500ms 500ms both',
+        }}>
+          <div style={{ aspectRatio: '320/260', background: theme.surfaceAlt }}>
+            {React.createElement(window.DrillDiagram, { variant: details.setup, theme, view: 'top' })}
+          </div>
+          {/* Narration ticker (synced) */}
+          {steps.length > 0 && (
+            <div
+              key={narIdx}
+              style={{
+                display: 'flex', gap: 10, alignItems: 'center',
+                padding: '10px 14px', borderTop: `1px solid ${theme.border}`,
+                animation: 'dtFadeUp 320ms ease-out both',
+              }}
+            >
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                background: theme.text, color: theme.bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: FONT.mono, fontSize: 11, fontWeight: 700,
+              }}>{steps[narIdx].n}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: -0.1 }}>{steps[narIdx].t}</div>
+                <div style={{
+                  fontSize: 10.5, color: theme.textSec, marginTop: 2, lineHeight: 1.45,
+                  overflow: 'hidden', display: '-webkit-box',
+                  WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                }}>{steps[narIdx].d}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                {steps.map((_, i) => (
+                  <div key={i} style={{
+                    width: 4, height: 4, borderRadius: '50%',
+                    background: i === narIdx ? theme.text : theme.border,
+                    transition: 'background .2s',
+                  }}/>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Collapsible "詳しい解説" — only in drill mode and when details exist */}
+      {cfg.isDrill && details && (() => {
+        const hasSteps = (details.steps || []).length > 0;
+        const hasMistakes = (details.mistakes || []).length > 0;
+        const hasCheck = (details.checkpoints || []).length > 0;
+        const tabs = [
+          hasSteps    && { k: 'steps',    label: '手順',   count: details.steps.length },
+          hasMistakes && { k: 'mistakes', label: 'ミス',   count: details.mistakes.length },
+          hasCheck    && { k: 'check',    label: 'チェック', count: details.checkpoints.length },
+        ].filter(Boolean);
+        return (
+          <div style={{ marginBottom: 14, animation: 'dtFadeUp 500ms 650ms both' }}>
+            <button onClick={() => setDetailsOpen(o => !o)} style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+              padding: '11px 14px',
+              background: theme.surface, border: `1px solid ${theme.border}`,
+              borderRadius: 8,
+              cursor: 'pointer', color: theme.text, fontFamily: FONT.sans,
+              fontSize: 12.5, fontWeight: 600, letterSpacing: -0.1, textAlign: 'left',
+            }}>
+              <span>詳しい解説</span>
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.3,
+              }}>
+                {details.purpose ? '目的 · ' : ''}
+                {tabs.map(t => `${t.label}${t.count}`).join(' · ')}
+              </span>
+              <span style={{ flex: 1 }}/>
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 12, color: theme.textSec,
+                transform: detailsOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s',
+              }}>▾</span>
+            </button>
+
+            {detailsOpen && (
+              <div style={{
+                marginTop: 8, border: `1px solid ${theme.border}`, borderRadius: 8,
+                background: theme.surface, overflow: 'hidden',
+              }}>
+                {/* Purpose */}
+                {details.purpose && (
+                  <div style={{
+                    padding: '12px 14px', borderBottom: `1px solid ${theme.border}`,
+                    fontSize: 12, color: theme.textSec, lineHeight: 1.6,
+                  }}>
+                    <div style={{
+                      fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
+                      letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500, marginBottom: 4,
+                    }}>目的</div>
+                    {details.purpose}
+                  </div>
+                )}
+
+                {/* Tabs */}
+                {tabs.length > 0 && (
+                  <div style={{ padding: '8px 14px 12px' }}>
+                    <div style={{
+                      display: 'flex', gap: 0, borderBottom: `1px solid ${theme.border}`,
+                      marginBottom: 10,
+                    }}>
+                      {tabs.map(t => {
+                        const on = detailTab === t.k;
+                        return (
+                          <button key={t.k} onClick={() => setDetailTab(t.k)} style={{
+                            flex: 1, padding: '8px 0',
+                            background: 'transparent', border: 'none',
+                            color: on ? theme.text : theme.textSec,
+                            fontFamily: FONT.sans, fontSize: 12,
+                            fontWeight: on ? 700 : 500, cursor: 'pointer',
+                            borderBottom: `2px solid ${on ? theme.text : 'transparent'}`,
+                            marginBottom: -1, letterSpacing: -0.1,
+                          }}>
+                            {t.label} <span style={{ fontFamily: FONT.mono, fontSize: 10, color: theme.textTer }}>{t.count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {detailTab === 'steps' && hasSteps && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {details.steps.map(s => (
+                          <div key={s.n} style={{ display: 'flex', gap: 10 }}>
+                            <div style={{
+                              width: 20, height: 20, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                              background: theme.text, color: theme.bg,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontFamily: FONT.mono, fontSize: 10, fontWeight: 700,
+                            }}>{s.n}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 12.5, fontWeight: 700 }}>{s.t}</div>
+                              <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 2, lineHeight: 1.55 }}>{s.d}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {detailTab === 'mistakes' && hasMistakes && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {details.mistakes.map((m, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 10 }}>
+                            <div style={{
+                              width: 18, height: 18, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                              background: 'rgba(178,58,42,0.1)', color: theme.danger,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11, fontWeight: 700,
+                            }}>×</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 12, fontWeight: 700 }}>{m.t}</div>
+                              <div style={{ fontSize: 11, color: theme.textSec, marginTop: 2, lineHeight: 1.55 }}>{m.d}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {detailTab === 'check' && hasCheck && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {details.checkpoints.map((c, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                            <div style={{
+                              width: 16, height: 16, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                              background: 'rgba(47,125,74,0.15)', color: theme.good,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>{Icon.check(theme.good, 10)}</div>
+                            <div style={{ fontSize: 12, lineHeight: 1.55, flex: 1 }}>{c}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Records row */}
       <div style={{

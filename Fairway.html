@@ -70,6 +70,90 @@
     settings: 'Settings',
   };
 
+  // Screens where the bottom tab bar is visible. Immersive flows (round entry,
+  // round result/complete, onboarding, dev galleries) hide it.
+  const TABBAR_SCREENS = new Set([
+    'home', 'course-select', 'practice', 'analysis', 'settings',
+  ]);
+
+  const MAIN_TABS = [
+    { k: 'home',          label: 'ホーム' },
+    { k: 'course-select', label: '記録', primary: true },
+    { k: 'practice',      label: '練習' },
+    { k: 'analysis',      label: '分析' },
+  ];
+
+  function MainTabBar({ theme, screen, go }) {
+    const iconFor = (k, active) => {
+      const stroke = active ? theme.text : theme.textSec;
+      const fill = active ? theme.text : 'none';
+      if (k === 'home') {
+        return (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M4 11 L12 4 L20 11 V19 C20 19.5 19.5 20 19 20 H15 V14 H9 V20 H5 C4.5 20 4 19.5 4 19 Z"
+              stroke={stroke} strokeWidth="1.6" strokeLinejoin="round" fill={active ? stroke : 'none'} fillOpacity={active ? 0.15 : 0}/>
+          </svg>
+        );
+      }
+      if (k === 'course-select') {
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.5" stroke={stroke} strokeWidth="1.6" fill={active ? stroke : 'none'}/>
+            <line x1="12" y1="7.5" x2="12" y2="16.5" stroke={active ? theme.bg : stroke} strokeWidth="2" strokeLinecap="round"/>
+            <line x1="7.5" y1="12" x2="16.5" y2="12" stroke={active ? theme.bg : stroke} strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        );
+      }
+      if (k === 'practice') {
+        return (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke={stroke} strokeWidth="1.6"/>
+            <circle cx="12" cy="12" r="5" stroke={stroke} strokeWidth="1.5"/>
+            <circle cx="12" cy="12" r="1.8" fill={stroke}/>
+          </svg>
+        );
+      }
+      if (k === 'analysis') {
+        return (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="4"  y="13" width="3.6" height="7" rx="0.6" fill={stroke}/>
+            <rect x="10" y="8"  width="3.6" height="12" rx="0.6" fill={stroke}/>
+            <rect x="16" y="4"  width="3.6" height="16" rx="0.6" fill={stroke}/>
+          </svg>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <nav style={{
+        display: 'flex',
+        borderTop: `1px solid ${theme.border}`,
+        background: theme.surface,
+        height: 56, flexShrink: 0,
+      }}>
+        {MAIN_TABS.map(t => {
+          const active = t.k === 'course-select'
+            ? ['course-select', 'round-setup', 'round', 'round-result', 'round-complete'].includes(screen)
+            : screen === t.k;
+          return (
+            <button key={t.k} onClick={() => go(t.k)} style={{
+              flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 2, padding: '8px 4px',
+              color: active ? theme.text : theme.textSec,
+              fontFamily: '"Noto Sans JP", "Inter", system-ui',
+              fontSize: 10, fontWeight: active ? 700 : 500, letterSpacing: 0.2,
+            }}>
+              {iconFor(t.k, active)}
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    );
+  }
+
   function App() {
     const [dark, setDark] = React.useState(TWEAKS.dark);
     const [personaKey, setPersonaKey] = React.useState(TWEAKS.persona);
@@ -165,7 +249,13 @@
         }}>
           <IOSDevice dark={dark} width={390} height={844}>
             <div className="hide-scroll" style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingTop: 58, background: theme.bg, color: theme.text }}>
-              {body}
+              <div style={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative' }} className="hide-scroll">
+                {body}
+              </div>
+              {/* Bottom tab bar — only on main pages, hidden on immersive flows */}
+              {TABBAR_SCREENS.has(screen) && (
+                <MainTabBar theme={theme} screen={screen} go={go}/>
+              )}
             </div>
           </IOSDevice>
         </div>

@@ -1024,3 +1024,4 @@ function Section({ theme, label, children }) {
 }
 
 window.DrillDetailScreen = DrillDetailScreen;
+window.DrillDiagram = DrillDiagram;
