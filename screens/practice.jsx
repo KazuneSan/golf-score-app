@@ -313,301 +313,269 @@ function ChallengePickRow({ theme, challengeKey, meta, selected, completions, on
 // Each condition = one hole. Each drill = a distance marker on the fairway.
 // Clubhouse Challenge at the bottom = goal metric test.
 // ─────────────────────────────────────────────────────────────
-// Fixed palette so fairway look stays consistent across themes
-const FAIRWAY_PALETTE = {
-  GRASS: '#7FBF94',
-  GRASS_D: '#4E8E67',
-  GRASS_SOFT: 'rgba(127,191,148,0.10)',
-  FAIRWAY_BG: '#D4EADC',
-  FAIRWAY_EDGE: '#A5CDB3',
-  INK_LIGHT: '#FFFFFF',
-};
-
-// ── session helpers (read gs_drill_sessions for best result per drill) ──
-function _allDrillSessions() {
-  try { return JSON.parse(localStorage.getItem('gs_drill_sessions') || '[]'); }
-  catch { return []; }
-}
-function getBestDrillSession(challengeKey, drillId) {
-  const all = _allDrillSessions();
-  const forThis = all.filter(r => r.challengeKey === challengeKey && r.drillId === drillId);
-  if (!forThis.length) return null;
-  return forThis.reduce((b, r) => (r.stars > (b?.stars || 0) || (r.stars === (b?.stars || 0) && r.pct > (b?.pct || 0)) ? r : b), null);
-}
-// Clear threshold: require 3 stars from a session (or the legacy manual toggle).
-const CLEAR_STARS = 3;
-function isDrillDone(challengeKey, drillId, completions) {
-  const legacy = !!completions?.[`${challengeKey}/${drillId}`]?.done;
-  if (legacy) return true;
-  const best = getBestDrillSession(challengeKey, drillId);
-  return !!(best && best.stars >= CLEAR_STARS);
-}
+// Gamification tokens — star gold accent only, rest is Linear v2 monochrome
+const STAR_COLOR = '#D49622';
+const STAR_SOFT  = '#E5A83A';
 
 function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, onOpenDetail, onOpenTest, onStartSession }) {
-  const C = FAIRWAY_PALETTE;
-  // Flat list (for overall progress)
   const flat = lib.conditions.flatMap(cond => cond.drills);
   const doneCount = flat.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
   const totalCount = flat.length;
-  const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+  const totalStars = flat.reduce((sum, d) => sum + (getBestDrillSession(challengeKey, d.id)?.stars || 0), 0);
+  const maxStars = totalCount * 3;
+  const allDone = doneCount === totalCount && totalCount > 0;
 
-  // Inject keyframes once per mount
-  const fairwayKeyframes = `
+  // One-time keyframes for pulse/shine
+  const gameKeyframes = `
     @keyframes fwPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); } 50% { box-shadow: 0 0 0 8px rgba(255,255,255,0); } }
-    @keyframes fwShimmer { 0%,100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(-3px); opacity: 1; } }
   `;
 
   return (
-    <div style={{
-      border: `1px solid ${theme.border}`, borderRadius: 10, overflow: 'hidden',
-      background: theme.surface,
-    }}>
-      <style>{fairwayKeyframes}</style>
+    <div>
+      <style>{gameKeyframes}</style>
 
-      {/* Course header (hole count + overall progress) */}
+      {/* Crown hero — XP-style total star count */}
       <div style={{
-        padding: '12px 16px',
-        background: `linear-gradient(135deg, ${C.GRASS_D}, ${C.GRASS})`,
-        color: C.INK_LIGHT,
+        padding: '14px 16px',
+        background: theme.text, color: theme.bg,
+        borderRadius: 10, marginBottom: 16,
       }}>
         <div style={{
           display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+          marginBottom: 8,
         }}>
           <div style={{
-            fontFamily: FONT.mono, fontSize: 9, letterSpacing: 1.2,
-            textTransform: 'uppercase', opacity: 0.75, fontWeight: 500,
-          }}>Course · {lib.conditions.length}H</div>
-          <div style={{ fontFamily: FONT.mono, fontSize: 11, fontWeight: 500, letterSpacing: 0.3 }}>
-            {doneCount}/{totalCount} · {pct}%
-          </div>
+            fontFamily: FONT.mono, fontSize: 9, letterSpacing: 1, textTransform: 'uppercase',
+            fontWeight: 600, opacity: 0.55,
+          }}>Total Crowns</div>
+          <div style={{
+            fontFamily: FONT.mono, fontSize: 11, fontWeight: 500, opacity: 0.75, letterSpacing: 0.3,
+          }}>{doneCount}/{totalCount} cleared</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M12 2 L14.5 9 L22 9 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2 9 L9.5 9 Z"
+              fill={STAR_SOFT} stroke={STAR_COLOR} strokeWidth="0.8"/>
+          </svg>
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 32, fontWeight: 400, letterSpacing: -1, lineHeight: 1,
+          }}>{totalStars}</span>
+          <span style={{ fontFamily: FONT.mono, fontSize: 14, opacity: 0.55 }}>/ {maxStars}</span>
         </div>
         <div style={{
-          marginTop: 8, height: 4, background: 'rgba(255,255,255,0.3)',
+          marginTop: 10, height: 3, background: 'rgba(255,255,255,0.15)',
           borderRadius: 2, overflow: 'hidden',
         }}>
           <div style={{
-            width: `${pct}%`, height: '100%',
-            background: 'rgba(255,255,255,0.95)', transition: 'width .4s',
+            width: maxStars ? `${(totalStars / maxStars) * 100}%` : '0%',
+            height: '100%',
+            background: allDone ? '#5FC48B' : 'rgba(255,255,255,0.95)',
+            transition: 'width .4s',
           }}/>
         </div>
       </div>
 
-      {/* Holes */}
-      <div style={{ background: C.GRASS_SOFT }}>
-        {lib.conditions.map((cond, hIdx) => (
-          <FairwayHole
-            key={cond.key}
-            theme={theme}
-            hole={hIdx + 1}
-            cond={cond}
-            challengeKey={challengeKey}
-            completions={completions}
-            toggleDrill={toggleDrill}
-            onOpenDetail={onOpenDetail}
-            onStartSession={onStartSession}
-          />
-        ))}
-
-        {/* Clubhouse Challenge */}
-        <ClubhouseChallenge
+      {/* Chapters */}
+      {lib.conditions.map((cond, idx) => (
+        <Chapter
+          key={cond.key}
           theme={theme}
-          lib={lib}
-          allDone={doneCount === totalCount && totalCount > 0}
-          onOpenTest={onOpenTest}
+          num={idx + 1}
+          cond={cond}
+          challengeKey={challengeKey}
+          completions={completions}
+          onStartSession={onStartSession}
+          onOpenDetail={onOpenDetail}
         />
-      </div>
+      ))}
+
+      {/* Clubhouse Challenge at the end */}
+      <ClubhouseChallenge
+        theme={theme}
+        lib={lib}
+        allDone={allDone}
+        onOpenTest={onOpenTest}
+      />
     </div>
   );
 }
 
-function FairwayHole({ theme, hole, cond, challengeKey, completions, toggleDrill, onOpenDetail, onStartSession }) {
-  const C = FAIRWAY_PALETTE;
-  const condDone = cond.drills.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
+// ─── Chapter (a condition / element — e.g., 方向性) ───
+function Chapter({ theme, num, cond, challengeKey, completions, onStartSession, onOpenDetail }) {
   const total = cond.drills.length;
-  const allDone = condDone === total && total > 0;
+  const clearedCount = cond.drills.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
+  const chapterStars = cond.drills.reduce((s, d) => s + (getBestDrillSession(challengeKey, d.id)?.stars || 0), 0);
+  const maxStars = total * 3;
+  const cleared = clearedCount === total && total > 0;
 
   return (
-    <div style={{ borderBottom: `1px dashed ${C.FAIRWAY_EDGE}` }}>
-      {/* Hole header */}
+    <div style={{ marginBottom: 18 }}>
+      {/* Chapter header strip */}
       <div style={{
-        padding: '10px 16px 4px',
-        display: 'flex', alignItems: 'baseline', gap: 10,
-        background: 'rgba(255,255,255,0.4)',
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '0 2px 8px',
       }}>
-        <span style={{
-          fontFamily: FONT.mono, fontSize: 10, letterSpacing: 1, fontWeight: 600,
-          color: C.GRASS_D, textTransform: 'uppercase',
-        }}>Hole {hole} · Par {total}</span>
-        <span style={{ flex: 1, height: 1, background: C.FAIRWAY_EDGE }}/>
-        <span style={{ fontFamily: FONT.mono, fontSize: 11, fontWeight: 500, color: theme.text }}>
-          {condDone}/{total}
-        </span>
+        <div style={{
+          fontFamily: FONT.mono, fontSize: 9, color: theme.textTer,
+          letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 700,
+        }}>Chapter {num}</div>
+        <div style={{ flex: 1, height: 1, background: theme.border }}/>
+        {/* Per-drill progress dots */}
+        <div style={{ display: 'flex', gap: 3 }}>
+          {cond.drills.map((d, i) => {
+            const done = isDrillDone(challengeKey, d.id, completions);
+            return (
+              <div key={i} style={{
+                width: 7, height: 7, borderRadius: '50%',
+                background: done ? theme.good : theme.border,
+              }}/>
+            );
+          })}
+        </div>
+        <div style={{
+          fontFamily: FONT.mono, fontSize: 10, color: theme.textSec, letterSpacing: 0.3,
+        }}>
+          ★ <span style={{ color: theme.text, fontWeight: 700 }}>{chapterStars}</span>/{maxStars}
+        </div>
       </div>
 
-      {/* Title + why */}
-      <div style={{ padding: '4px 16px 8px' }}>
-        <div style={{ fontSize: 14.5, fontWeight: 700, letterSpacing: -0.2, color: theme.text }}>
+      {/* Title row */}
+      <div style={{
+        padding: '0 2px 4px',
+        display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap',
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: -0.3 }}>
           {cond.title}
         </div>
-        <div style={{ fontSize: 11, color: theme.textSec, marginTop: 3, lineHeight: 1.55 }}>
-          {cond.sub}
-        </div>
+        {cleared && (
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 9, fontWeight: 700,
+            color: theme.good, letterSpacing: 0.6, textTransform: 'uppercase',
+            padding: '2px 6px', background: theme.good + '22', borderRadius: 3,
+          }}>✓ Cleared</span>
+        )}
+      </div>
+      <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 1, marginBottom: 8, padding: '0 2px', lineHeight: 1.55 }}>
+        {cond.sub}
       </div>
 
-      {/* Why note */}
-      <div style={{ padding: '0 16px 10px' }}>
-        <div style={{
-          fontSize: 11, color: theme.textSec, lineHeight: 1.55,
-          padding: '8px 10px', background: 'rgba(255,255,255,0.5)',
-          borderRadius: 6, borderLeft: `2px solid ${C.GRASS_D}`,
-        }}>
-          <b style={{ color: theme.text, fontWeight: 600 }}>なぜこの要素？</b>　{cond.why}
-        </div>
+      {/* Why note — tight */}
+      <div style={{
+        padding: '8px 10px', marginBottom: 8,
+        background: theme.surfaceAlt, borderRadius: 6,
+        borderLeft: `2px solid ${theme.borderStrong}`,
+        fontSize: 11, color: theme.textSec, lineHeight: 1.55,
+      }}>
+        {cond.why}
       </div>
 
-      {/* Fairway with drills */}
-      <div style={{ position: 'relative', padding: '4px 16px 14px' }}>
-        {/* Fairway strip */}
-        <div style={{
-          position: 'absolute', left: 30, top: 4, bottom: 14, width: 22,
-          background: `linear-gradient(180deg, ${C.FAIRWAY_BG}, ${C.FAIRWAY_BG} 90%, ${C.FAIRWAY_EDGE})`,
-          borderRadius: 11,
-          border: `1px dashed ${C.FAIRWAY_EDGE}`,
-        }}/>
-
-        {/* TEE marker */}
-        <FairwayMarker icon="⛳" label="TEE" color={C.GRASS_D}/>
-
-        {/* Drill nodes */}
-        {cond.drills.map(d => {
-          const done = isDrillDone(challengeKey, d.id, completions);
-          const hasDetail = !!(window.DRILL_DETAILS || {})[d.id];
-          const bestSession = getBestDrillSession(challengeKey, d.id);
-          return (
-            <FairwayDrillNode
-              key={d.id}
-              theme={theme}
-              drill={d}
-              done={done}
-              bestSession={bestSession}
-              hasDetail={hasDetail}
-              onStart={() => onStartSession(d.id)}
-              onOpenDetail={() => onOpenDetail(d.id)}
-            />
-          );
-        })}
-
-        {/* GREEN marker */}
-        <FairwayMarker icon="🏁" label={allDone ? 'GREEN COMPLETE' : 'GREEN'}
-          color={allDone ? C.GRASS_D : theme.textSec}
-          faded={!allDone}/>
+      {/* Drill rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {cond.drills.map((d, i) => (
+          <DrillRow
+            key={d.id}
+            theme={theme}
+            idx={i + 1}
+            drill={d}
+            done={isDrillDone(challengeKey, d.id, completions)}
+            bestSession={getBestDrillSession(challengeKey, d.id)}
+            hasDetail={!!(window.DRILL_DETAILS || {})[d.id]}
+            onStart={() => onStartSession(d.id)}
+            onOpenDetail={() => onOpenDetail(d.id)}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-// Row with an emoji icon centered over the fairway strip + label
-function FairwayMarker({ icon, label, color, faded }) {
-  return (
-    <div style={{
-      position: 'relative', display: 'flex', alignItems: 'center', gap: 14,
-      padding: '6px 0',
-    }}>
-      <div style={{
-        width: 44, display: 'flex', justifyContent: 'center', zIndex: 1,
-        fontSize: 18, lineHeight: 1, opacity: faded ? 0.5 : 1,
-      }}>{icon}</div>
-      <div style={{
-        fontFamily: FONT.mono, fontSize: 10, color, letterSpacing: 0.6, fontWeight: 600,
-        textTransform: 'uppercase',
-      }}>{label}</div>
-    </div>
-  );
-}
-
-function FairwayDrillNode({ theme, drill, done, bestSession, hasDetail, onStart, onOpenDetail }) {
-  const C = FAIRWAY_PALETTE;
+// ─── DrillRow — single drill with node + stars + CTA ───
+function DrillRow({ theme, idx, drill, done, bestSession, hasDetail, onStart, onOpenDetail }) {
   const stars = bestSession?.stars || 0;
+  const inProgress = stars > 0 && !done;
   return (
-    <div style={{
-      position: 'relative', display: 'flex', alignItems: 'center', gap: 12,
-      padding: '7px 0',
-    }}>
-      {/* Node marker (visual only — overall row tap opens session) */}
+    <div
+      onClick={onStart}
+      style={{
+        display: 'flex', alignItems: 'stretch',
+        background: theme.surface,
+        border: `1px solid ${done ? theme.good + '55' : inProgress ? theme.borderStrong : theme.border}`,
+        borderRadius: 8, padding: '10px 10px 10px 12px',
+        gap: 12, cursor: 'pointer',
+      }}
+    >
+      {/* Left node: number or check */}
       <div style={{
-        width: 44, display: 'flex', justifyContent: 'center', zIndex: 1,
+        width: 30, height: 30, flexShrink: 0, borderRadius: '50%',
+        background: done ? theme.good : theme.surfaceAlt,
+        border: done ? 'none' : `1.5px solid ${theme.borderStrong}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        alignSelf: 'center',
       }}>
+        {done ? (
+          <svg width="14" height="14" viewBox="0 0 12 12">
+            <path d="M2 6 L 5 9 L 10 3" stroke="#fff" strokeWidth="2.2" fill="none"
+              strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ) : (
+          <span style={{
+            fontFamily: FONT.mono, fontSize: 12, fontWeight: 700, color: theme.text,
+          }}>{idx}</span>
+        )}
+      </div>
+
+      {/* Middle content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: -0.1 }}>{drill.name}</span>
+          {/* Always show 3 stars (shows the goal) */}
+          <div style={{ display: 'flex', gap: 1 }}>
+            {[1, 2, 3].map(n => (
+              <svg key={n} width="11" height="11" viewBox="0 0 24 24">
+                <path d="M12 2 L14.5 9 L22 9 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2 9 L9.5 9 Z"
+                  fill={stars >= n ? STAR_SOFT : 'transparent'}
+                  stroke={stars >= n ? STAR_COLOR : theme.border}
+                  strokeWidth="1.5" strokeLinejoin="round"/>
+              </svg>
+            ))}
+          </div>
+        </div>
         <div style={{
-          width: 22, height: 22, borderRadius: '50%',
-          background: done ? C.GRASS_D : '#FFFFFF',
-          border: `2px solid ${done ? C.GRASS_D : '#C5CEC8'}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 10.5, color: theme.textSec, marginTop: 3,
+          fontFamily: FONT.mono, letterSpacing: 0.3,
         }}>
-          {done ? (
-            <svg width="11" height="11" viewBox="0 0 12 12">
-              <path d="M2 6 L 5 9 L 10 3" stroke="#fff" strokeWidth="2.2" fill="none"
-                strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          ) : (
-            <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#C5CEC8' }}/>
-          )}
+          {drill.time} · {drill.detail}
         </div>
       </div>
 
-      {/* Tap row → open session */}
-      <button onClick={onStart} style={{
-        flex: 1, minWidth: 0, background: 'transparent', border: 'none', cursor: 'pointer',
-        padding: '4px 0', textAlign: 'left', fontFamily: FONT.sans, color: 'inherit',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
+      {/* Right CTAs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+        {hasDetail && (
+          <button onClick={(e) => { e.stopPropagation(); onOpenDetail(); }} style={{
+            background: 'transparent', color: theme.textSec,
+            border: `1px solid ${theme.border}`, borderRadius: 4,
+            padding: '3px 7px', fontSize: 10, fontWeight: 500, cursor: 'pointer',
+            fontFamily: FONT.sans,
+          }}>解説</button>
+        )}
+        <button onClick={(e) => { e.stopPropagation(); onStart(); }} style={{
+          background: done ? 'transparent' : theme.text,
+          color: done ? theme.text : theme.bg,
+          border: done ? `1px solid ${theme.borderStrong}` : 'none',
+          borderRadius: 14, padding: '5px 11px',
+          fontSize: 10.5, fontWeight: 700, cursor: 'pointer',
+          fontFamily: FONT.mono, letterSpacing: 0.5,
         }}>
-          <div style={{
-            fontSize: 13, fontWeight: 600, letterSpacing: -0.1, color: theme.text,
-          }}>{drill.name}</div>
-          {stars > 0 && (
-            <div style={{ display: 'flex', gap: 1 }}>
-              {[1, 2, 3].map(n => (
-                <svg key={n} width="10" height="10" viewBox="0 0 24 24">
-                  <path d="M12 2 L14.5 9 L22 9 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2 9 L9.5 9 Z"
-                    fill={stars >= n ? '#FFB93D' : 'transparent'}
-                    stroke={stars >= n ? '#D49622' : '#C5CEC8'}
-                    strokeWidth="1.5" strokeLinejoin="round"/>
-                </svg>
-              ))}
-            </div>
-          )}
-        </div>
-        <div style={{
-          fontSize: 10.5, color: theme.textSec, marginTop: 2,
-          fontFamily: FONT.mono, letterSpacing: 0.3,
-        }}>{drill.time} · {drill.detail}</div>
-      </button>
-
-      {/* Play chip — label reflects progress toward ★3 */}
-      <button onClick={onStart} style={{
-        background: done ? C.GRASS_SOFT : C.GRASS_D,
-        color: done ? C.GRASS_D : '#fff',
-        border: `1px solid ${done ? C.GRASS_D + '55' : 'transparent'}`,
-        borderRadius: 14, padding: '4px 10px',
-        fontSize: 10, fontWeight: 700, cursor: 'pointer',
-        fontFamily: FONT.mono, flexShrink: 0, letterSpacing: 0.5,
-      }}>{done ? 'もう一度' : stars > 0 ? '★更新' : 'プレイ'}</button>
-
-      {hasDetail && (
-        <button onClick={(e) => { e.stopPropagation(); onOpenDetail(); }} style={{
-          background: 'transparent', color: theme.textSec,
-          border: `1px solid ${theme.border}`, borderRadius: 4,
-          padding: '3px 8px', fontSize: 10, fontWeight: 500, cursor: 'pointer',
-          fontFamily: FONT.sans, flexShrink: 0,
-        }}>解説</button>
-      )}
+          {done ? 'もう一度' : inProgress ? '★ 更新' : 'プレイ'}
+        </button>
+      </div>
     </div>
   );
 }
+
 
 function ClubhouseChallenge({ theme, lib, allDone, onOpenTest }) {
-  const C = FAIRWAY_PALETTE;
+  const C = { GRASS_D: '#4E8E67', INK_LIGHT: '#FFFFFF' };
   // Best record (if any)
   const best = (() => {
     try {
