@@ -413,6 +413,12 @@ function HomeScreen({ theme, persona, go }) {
         padding: '10px 0', borderRadius: 6, fontSize: 11, fontWeight: 500,
         cursor: 'pointer', fontFamily: FONT.mono, letterSpacing: 0.5,
       }}>DEV · ドリルアニメ方向性を見る →</button>
+      <button onClick={() => go('drill-layout-gallery')} style={{
+        marginTop: 6, width: '100%', background: 'transparent',
+        color: theme.textTer, border: `1px dashed ${theme.borderStrong}`,
+        padding: '10px 0', borderRadius: 6, fontSize: 11, fontWeight: 500,
+        cursor: 'pointer', fontFamily: FONT.mono, letterSpacing: 0.5,
+      }}>DEV · ドリルレイアウト比較 F/H →</button>
     </div>
   );
 }
