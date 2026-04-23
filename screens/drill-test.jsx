@@ -17,18 +17,64 @@ const TEST_CONFIG = {
   approach: { attempts: 8,  action: '30Y アプローチ',    verb: '寄せワン圏内',      short: 'OK',   icon: '🎯' },
 };
 
-function DrillTestScreen({ theme, challengeKey, onBack, onDone }) {
+// mode='test' (default, clubhouse challenge) | 'drill' (single drill play)
+function DrillTestScreen({ theme, challengeKey, drillId, mode = 'test', onBack, onDone }) {
   const lib = (window.DRILL_LIBRARY || {})[challengeKey];
-  const cfg = TEST_CONFIG[challengeKey] || TEST_CONFIG.putt;
+  const base = TEST_CONFIG[challengeKey] || TEST_CONFIG.putt;
 
   if (!lib) {
     return (
       <div style={{ padding: 40, color: theme.text, fontFamily: FONT.sans }}>
-        この課題のテストはまだ未整備です。
+        この課題のセッションはまだ未整備です。
         <TapBtn theme={theme} variant="ghost" onClick={onBack} style={{ marginTop: 20 }}>戻る</TapBtn>
       </div>
     );
   }
+
+  // Resolve drill + condition (drill mode only)
+  const { drill, cond, drillIdxInCond, totalDrillsInCond, orderInChallenge } = React.useMemo(() => {
+    if (mode !== 'drill' || !drillId) return {};
+    let flatOrder = 0;
+    for (const c of lib.conditions) {
+      for (let i = 0; i < c.drills.length; i++) {
+        if (c.drills[i].id === drillId) {
+          return {
+            drill: c.drills[i],
+            cond: c,
+            drillIdxInCond: i,
+            totalDrillsInCond: c.drills.length,
+            orderInChallenge: flatOrder + 1,
+          };
+        }
+        flatOrder++;
+      }
+    }
+    return {};
+  }, [mode, drillId, lib]);
+
+  // Session config — tailored per mode
+  const cfg = mode === 'drill' && drill
+    ? {
+        ...base,
+        attempts: 6,  // drill sessions are shorter
+        kicker: `Drill · ${cond.title}`,
+        title: drill.name,
+        subtitle: drill.detail,
+        benchmark: cond.why,
+        storageKey: 'gs_drill_sessions',
+        storageExtra: { challengeKey, drillId },
+        isDrill: true,
+      }
+    : {
+        ...base,
+        kicker: 'Goal Test',
+        title: `${lib.goal.metric}`,
+        subtitle: `${base.action} × ${base.attempts}球`,
+        benchmark: lib.goal.benchmark,
+        storageKey: 'gs_test_results',
+        storageExtra: { challengeKey },
+        isDrill: false,
+      };
 
   const target = lib.goal.target;
   const targetLabel = lib.goal.targetLabel;
@@ -39,12 +85,16 @@ function DrillTestScreen({ theme, challengeKey, onBack, onDone }) {
 
   const bestRecord = React.useMemo(() => {
     try {
-      const all = JSON.parse(localStorage.getItem('gs_test_results') || '[]');
-      const forThis = all.filter(r => r.challengeKey === challengeKey);
+      const all = JSON.parse(localStorage.getItem(cfg.storageKey) || '[]');
+      const forThis = all.filter(r => {
+        if (r.challengeKey !== challengeKey) return false;
+        if (cfg.isDrill && r.drillId !== drillId) return false;
+        return true;
+      });
       if (forThis.length === 0) return null;
       return forThis.reduce((b, r) => (r.pct > (b?.pct || 0) ? r : b), null);
     } catch { return null; }
-  }, [challengeKey, phase]);
+  }, [challengeKey, drillId, phase, cfg.storageKey, cfg.isDrill]);
 
   const startTest = () => {
     setRecords([]);
@@ -66,11 +116,12 @@ function DrillTestScreen({ theme, challengeKey, onBack, onDone }) {
           challengeKey, ts: Date.now(),
           attempts: cfg.attempts, successes: succ,
           pct, passed, stars,
+          ...cfg.storageExtra,
         };
         try {
-          const all = JSON.parse(localStorage.getItem('gs_test_results') || '[]');
+          const all = JSON.parse(localStorage.getItem(cfg.storageKey) || '[]');
           all.unshift(entry);
-          localStorage.setItem('gs_test_results', JSON.stringify(all.slice(0, 200)));
+          localStorage.setItem(cfg.storageKey, JSON.stringify(all.slice(0, 500)));
         } catch { /* noop */ }
         setLastResult({ ...entry, newBest, prevBestPct, records: next });
         setTimeout(() => setPhase('result'), 350);
@@ -115,11 +166,12 @@ function DrillTestScreen({ theme, challengeKey, onBack, onDone }) {
         <div style={{
           fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
           letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 600,
-        }}>Clubhouse Challenge</div>
+        }}>{cfg.isDrill ? 'Drill Session' : 'Clubhouse Challenge'}</div>
         <div style={{ width: 40 }}/>
       </div>
 
       {phase === 'intro' && <IntroPhase theme={theme} lib={lib} cfg={cfg} bestRecord={bestRecord}
+        drill={drill} cond={cond} orderInChallenge={orderInChallenge}
         onStart={startTest}/>}
       {phase === 'active' && <ActivePhase theme={theme} lib={lib} cfg={cfg} records={records}
         target={target} onTap={recordAttempt}/>}
@@ -133,67 +185,97 @@ function DrillTestScreen({ theme, challengeKey, onBack, onDone }) {
 // ─────────────────────────────────────────────────────────
 // INTRO phase
 // ─────────────────────────────────────────────────────────
-function IntroPhase({ theme, lib, cfg, bestRecord, onStart }) {
+function IntroPhase({ theme, lib, cfg, bestRecord, drill, cond, orderInChallenge, onStart }) {
   const bestDate = bestRecord
     ? new Date(bestRecord.ts).toLocaleDateString('ja-JP', { year: 'numeric', month: 'numeric', day: 'numeric' })
     : null;
 
   return (
-    <div style={{ flex: 1, padding: '8px 20px 30px', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ flex: 1, padding: '8px 20px 30px', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
       <div style={{
         fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
         letterSpacing: 1.2, textTransform: 'uppercase', fontWeight: 500,
         animation: 'dtFadeUp 400ms 100ms both',
-      }}>Goal Test</div>
+      }}>{cfg.kicker}</div>
+
       <div style={{
-        fontSize: 26, fontWeight: 800, letterSpacing: -0.7, lineHeight: 1.2,
+        fontSize: cfg.isDrill ? 24 : 26, fontWeight: 800, letterSpacing: -0.6, lineHeight: 1.2,
         marginTop: 10, marginBottom: 6,
         animation: 'dtPop 550ms 200ms cubic-bezier(0.16, 1, 0.3, 1) both',
       }}>
-        {lib.goal.metric}<br/>テスト
+        {cfg.isDrill ? cfg.title : <>{cfg.title}<br/>テスト</>}
       </div>
-      <div style={{
-        fontSize: 12.5, color: theme.textSec, lineHeight: 1.6, marginBottom: 20,
-        animation: 'dtFadeUp 400ms 400ms both',
-      }}>
-        {cfg.action} を <b style={{ color: theme.text }}>{cfg.attempts}球</b> 打って、
-        {cfg.verb} の回数をカウント。<br/>
-        目標は <b style={{ color: theme.text }}>{lib.goal.target}% ({lib.goal.targetLabel})</b>。
-      </div>
+
+      {cfg.isDrill ? (
+        <div style={{
+          fontSize: 12.5, color: theme.textSec, lineHeight: 1.6, marginBottom: 16,
+          animation: 'dtFadeUp 400ms 400ms both',
+        }}>
+          {cfg.subtitle}
+        </div>
+      ) : (
+        <div style={{
+          fontSize: 12.5, color: theme.textSec, lineHeight: 1.6, marginBottom: 20,
+          animation: 'dtFadeUp 400ms 400ms both',
+        }}>
+          {cfg.action} を <b style={{ color: theme.text }}>{cfg.attempts}球</b> 打って、
+          {cfg.verb} の回数をカウント。<br/>
+          目標は <b style={{ color: theme.text }}>{lib.goal.target}% ({lib.goal.targetLabel})</b>。
+        </div>
+      )}
 
       {/* Records row */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
         animation: 'dtFadeUp 500ms 600ms both',
       }}>
-        <RecordCard theme={theme} label="目標" big={`${lib.goal.target}%`}
-          sub={lib.goal.benchmark}/>
+        <RecordCard theme={theme} label="目標"
+          big={`${lib.goal.target}%`}
+          sub={cfg.isDrill ? `${cfg.attempts}球中 ${Math.ceil(lib.goal.target * cfg.attempts / 100)}球以上` : lib.goal.benchmark}/>
         <RecordCard theme={theme} label="ベスト記録"
           big={bestRecord ? `${bestRecord.pct}%` : '—'}
-          sub={bestRecord ? `${bestDate} · ${bestRecord.successes}/${bestRecord.attempts}` : '未挑戦'}
+          sub={bestRecord
+            ? `${bestDate} · ${bestRecord.successes}/${bestRecord.attempts} · ${'★'.repeat(bestRecord.stars)}`
+            : '未挑戦'}
           highlight={!!bestRecord}/>
       </div>
 
-      {/* Rule explainer */}
+      {/* Why / context */}
       <div style={{
-        marginTop: 18, padding: '12px 14px',
+        marginTop: 16, padding: '12px 14px',
         background: theme.surfaceAlt, border: `1px solid ${theme.border}`, borderRadius: 8,
+        borderLeft: `3px solid ${theme.text}`,
         animation: 'dtFadeUp 500ms 800ms both',
+      }}>
+        <div style={{
+          fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer,
+          letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500,
+          marginBottom: 6,
+        }}>{cfg.isDrill ? 'なぜこのドリル？' : 'Benchmark'}</div>
+        <div style={{ fontSize: 12.5, color: theme.textSec, lineHeight: 1.7 }}>
+          {cfg.benchmark}
+        </div>
+      </div>
+
+      {/* Rule / flow */}
+      <div style={{
+        marginTop: 12, padding: '12px 14px',
+        background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 8,
+        animation: 'dtFadeUp 500ms 950ms both',
       }}>
         <div style={{
           fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer,
           letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500,
           marginBottom: 8,
         }}>Rule</div>
-        <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: theme.textSec, lineHeight: 1.85 }}>
+        <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: theme.textSec, lineHeight: 1.75 }}>
           <li>{cfg.action} を {cfg.attempts} 球、順番に打つ</li>
-          <li>{cfg.verb} したら「IN」、しなかったら「OUT」をタップ</li>
-          <li>達成率が目標（{lib.goal.target}%）以上なら合格</li>
-          <li>+10% 以上なら ★★★ 最高評価</li>
+          <li>{cfg.verb} したら「{cfg.short}」、しなかったら「OUT」をタップ</li>
+          <li>達成率 {lib.goal.target}% 以上で合格（★★）、+10% で ★★★</li>
         </ol>
       </div>
 
-      <div style={{ flex: 1 }}/>
+      <div style={{ flex: 1, minHeight: 8 }}/>
 
       {/* Start button */}
       <button onClick={onStart} style={{
@@ -203,7 +285,7 @@ function IntroPhase({ theme, lib, cfg, bestRecord, onStart }) {
         letterSpacing: -0.1, marginTop: 14,
         animation: 'dtPop 500ms 1100ms cubic-bezier(0.16, 1, 0.3, 1) both, dtPulse 2.2s 1800ms infinite',
       }}>
-        テスト開始 →
+        {cfg.isDrill ? 'ドリル開始 →' : 'テスト開始 →'}
       </button>
       <div style={{
         textAlign: 'center', fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
@@ -433,9 +515,9 @@ function ResultPhase({ theme, lib, cfg, result, target, targetLabel, onRetry, on
   const diff = result.pct - target;
 
   const msg = (() => {
-    if (stars === 3) return `最高評価！ 目標を +${diff}% 更新`;
-    if (stars === 2) return `目標達成 ${diff >= 0 ? '+' : ''}${diff}%`;
-    return `目標まで あと ${Math.abs(diff)}%`;
+    if (stars === 3) return cfg.isDrill ? `完璧！ +${diff}% 上振れ` : `最高評価！ 目標を +${diff}% 更新`;
+    if (stars === 2) return cfg.isDrill ? `クリア ${diff >= 0 ? '+' : ''}${diff}%` : `目標達成 ${diff >= 0 ? '+' : ''}${diff}%`;
+    return cfg.isDrill ? `もう一歩 (目標 −${Math.abs(diff)}%)` : `目標まで あと ${Math.abs(diff)}%`;
   })();
 
   return (
@@ -545,13 +627,13 @@ function ResultPhase({ theme, lib, cfg, result, target, targetLabel, onRetry, on
           padding: '14px 0', borderRadius: 8,
           fontFamily: FONT.sans, fontSize: 14, fontWeight: 700, cursor: 'pointer',
           letterSpacing: -0.1,
-        }}>もう一度テストする</button>
+        }}>{cfg.isDrill ? 'もう一度ドリル' : 'もう一度テスト'}</button>
         <button onClick={onDone} style={{
           width: '100%', background: 'transparent', color: theme.text,
           border: `1px solid ${theme.borderStrong}`,
           padding: '13px 0', borderRadius: 8,
           fontFamily: FONT.sans, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-        }}>ドリルに戻る</button>
+        }}>ドリル一覧に戻る</button>
       </div>
     </div>
   );

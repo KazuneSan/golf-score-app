@@ -50,6 +50,7 @@ function PracticeScreen({ theme, go }) {
       completions={completions} toggleDrill={toggleDrill}
       onOpenDetail={(dId) => { setActiveDrillId(dId); setPhase('drillDetail'); }}
       onOpenTest={() => setPhase('drillTest')}
+      onStartSession={(dId) => { setActiveDrillId(dId); setPhase('drillSession'); }}
       onFinish={(session) => { setLastSession(session); setPhase('summary'); }}
       onBack={() => setPhase('hub')}/>;
   }
@@ -64,6 +65,18 @@ function PracticeScreen({ theme, go }) {
   if (phase === 'drillTest') {
     return <DrillTestScreen theme={theme}
       challengeKey={challenge}
+      mode="test"
+      onBack={() => setPhase('drill')}
+      onDone={() => setPhase('drill')}/>;
+  }
+  if (phase === 'drillSession') {
+    // Playing a specific drill — same UI as test, with drill-specific config.
+    // Completion for the Fairway is derived from session history (see FairwayRoadmap),
+    // so we don't need to toggle the legacy 'gs_drill_done' flag here.
+    return <DrillTestScreen theme={theme}
+      challengeKey={challenge}
+      drillId={activeDrillId}
+      mode="drill"
       onBack={() => setPhase('drill')}
       onDone={() => setPhase('drill')}/>;
   }
@@ -206,6 +219,94 @@ function PracticeHub({ theme, go, challenges, challenge, setChallenge, completio
 }
 
 // ─────────────────────────────────────────────────────────────
+// DrillProgressHero — dark card at top of DrillScreen replacing goal card.
+// Shows X/Y drills cleared + star total + motivational copy.
+// ─────────────────────────────────────────────────────────────
+function DrillProgressHero({ theme, lib, challengeKey, completions }) {
+  const flat = lib.conditions.flatMap(cond => cond.drills);
+  const totalDrills = flat.length;
+  // Use isDrillDone logic to count completions (session-aware)
+  const doneCount = flat.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
+  const pct = totalDrills ? Math.round((doneCount / totalDrills) * 100) : 0;
+  // Star totals (out of 3 per drill)
+  const totalStars = flat.reduce((sum, d) => {
+    const best = getBestDrillSession(challengeKey, d.id);
+    return sum + (best?.stars || 0);
+  }, 0);
+  const maxStars = totalDrills * 3;
+
+  const copy = (() => {
+    if (doneCount === 0) return '最初の1つからはじめよう。まずは1ドリル、プレイしてみる。';
+    if (doneCount < totalDrills) return `あと ${totalDrills - doneCount} ドリルで、全ホール攻略。Clubhouse Challenge の挑戦権も本番に。`;
+    if (totalStars < maxStars) return `全ドリル制覇！ ★${totalStars}/${maxStars} — 全部 ★★★ を狙って記録更新もアリ。`;
+    return '完璧！ このチャレンジは文句なし。Clubhouse でベスト更新を狙おう。';
+  })();
+
+  return (
+    <div style={{
+      background: theme.text, color: theme.bg,
+      borderRadius: 10, padding: '14px 16px',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div style={{
+          fontFamily: FONT.mono, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase',
+          opacity: 0.55, fontWeight: 600,
+        }}>Drill Progress</div>
+        {totalStars > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 3,
+            fontFamily: FONT.mono, fontSize: 11, fontWeight: 600,
+            opacity: 0.85,
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24">
+              <path d="M12 2 L14.5 9 L22 9 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2 9 L9.5 9 Z"
+                fill="#FFB93D" stroke="none"/>
+            </svg>
+            <span>{totalStars}/{maxStars}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Big progress numbers */}
+      <div style={{
+        display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 10, marginBottom: 10,
+      }}>
+        <span style={{
+          fontFamily: FONT.mono, fontSize: 42, fontWeight: 300,
+          letterSpacing: -1.4, lineHeight: 0.9,
+        }}>{doneCount}</span>
+        <span style={{ fontFamily: FONT.mono, fontSize: 17, opacity: 0.5 }}>/ {totalDrills}</span>
+        <span style={{ flex: 1 }}/>
+        <span style={{
+          fontFamily: FONT.mono, fontSize: 22, fontWeight: 500,
+          letterSpacing: -0.6, color: pct === 100 ? '#5FC48B' : 'inherit',
+        }}>{pct}%</span>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{
+        height: 4, background: 'rgba(255,255,255,0.15)',
+        borderRadius: 2, overflow: 'hidden', marginBottom: 10,
+      }}>
+        <div style={{
+          width: `${pct}%`, height: '100%',
+          background: pct === 100 ? '#5FC48B' : 'rgba(255,255,255,0.95)',
+          transition: 'width .4s',
+        }}/>
+      </div>
+
+      <div style={{
+        padding: '8px 10px',
+        background: 'rgba(255,255,255,0.08)',
+        borderRadius: 6,
+        fontSize: 11, lineHeight: 1.55, opacity: 0.85,
+      }}>{copy}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
 // Fairway roadmap — "course" visualization of challenge drills.
 // Each condition = one hole. Each drill = a distance marker on the fairway.
 // Clubhouse Challenge at the bottom = goal metric test.
@@ -220,11 +321,30 @@ const FAIRWAY_PALETTE = {
   INK_LIGHT: '#FFFFFF',
 };
 
-function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, onOpenDetail, onOpenTest }) {
+// ── session helpers (read gs_drill_sessions for best result per drill) ──
+function _allDrillSessions() {
+  try { return JSON.parse(localStorage.getItem('gs_drill_sessions') || '[]'); }
+  catch { return []; }
+}
+function getBestDrillSession(challengeKey, drillId) {
+  const all = _allDrillSessions();
+  const forThis = all.filter(r => r.challengeKey === challengeKey && r.drillId === drillId);
+  if (!forThis.length) return null;
+  return forThis.reduce((b, r) => (r.stars > (b?.stars || 0) || (r.stars === (b?.stars || 0) && r.pct > (b?.pct || 0)) ? r : b), null);
+}
+// Union of legacy toggle and session history → done
+function isDrillDone(challengeKey, drillId, completions) {
+  const legacy = !!completions?.[`${challengeKey}/${drillId}`]?.done;
+  if (legacy) return true;
+  const best = getBestDrillSession(challengeKey, drillId);
+  return !!(best && best.stars >= 1);
+}
+
+function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, onOpenDetail, onOpenTest, onStartSession }) {
   const C = FAIRWAY_PALETTE;
   // Flat list (for overall progress)
   const flat = lib.conditions.flatMap(cond => cond.drills);
-  const doneCount = flat.filter(d => completions[`${challengeKey}/${d.id}`]?.done).length;
+  const doneCount = flat.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
   const totalCount = flat.length;
   const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
 
@@ -281,6 +401,7 @@ function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, on
             completions={completions}
             toggleDrill={toggleDrill}
             onOpenDetail={onOpenDetail}
+            onStartSession={onStartSession}
           />
         ))}
 
@@ -296,9 +417,9 @@ function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, on
   );
 }
 
-function FairwayHole({ theme, hole, cond, challengeKey, completions, toggleDrill, onOpenDetail }) {
+function FairwayHole({ theme, hole, cond, challengeKey, completions, toggleDrill, onOpenDetail, onStartSession }) {
   const C = FAIRWAY_PALETTE;
-  const condDone = cond.drills.filter(d => completions[`${challengeKey}/${d.id}`]?.done).length;
+  const condDone = cond.drills.filter(d => isDrillDone(challengeKey, d.id, completions)).length;
   const total = cond.drills.length;
   const allDone = condDone === total && total > 0;
 
@@ -356,16 +477,18 @@ function FairwayHole({ theme, hole, cond, challengeKey, completions, toggleDrill
 
         {/* Drill nodes */}
         {cond.drills.map(d => {
-          const done = !!completions[`${challengeKey}/${d.id}`]?.done;
+          const done = isDrillDone(challengeKey, d.id, completions);
           const hasDetail = !!(window.DRILL_DETAILS || {})[d.id];
+          const bestSession = getBestDrillSession(challengeKey, d.id);
           return (
             <FairwayDrillNode
               key={d.id}
               theme={theme}
               drill={d}
               done={done}
+              bestSession={bestSession}
               hasDetail={hasDetail}
-              onToggleDone={() => toggleDrill(challengeKey, d.id)}
+              onStart={() => onStartSession(d.id)}
               onOpenDetail={() => onOpenDetail(d.id)}
             />
           );
@@ -399,62 +522,82 @@ function FairwayMarker({ icon, label, color, faded }) {
   );
 }
 
-function FairwayDrillNode({ theme, drill, done, hasDetail, onToggleDone, onOpenDetail }) {
+function FairwayDrillNode({ theme, drill, done, bestSession, hasDetail, onStart, onOpenDetail }) {
   const C = FAIRWAY_PALETTE;
+  const stars = bestSession?.stars || 0;
   return (
     <div style={{
-      position: 'relative', display: 'flex', alignItems: 'center', gap: 14,
+      position: 'relative', display: 'flex', alignItems: 'center', gap: 12,
       padding: '7px 0',
     }}>
-      {/* Tap the circle to toggle done */}
-      <button onClick={onToggleDone}
-        aria-label={done ? '完了を取り消す' : '完了にする'}
-        style={{
-          width: 44, display: 'flex', justifyContent: 'center',
-          background: 'transparent', border: 'none', cursor: 'pointer',
-          padding: '6px 0', zIndex: 1,
-        }}>
+      {/* Node marker (visual only — overall row tap opens session) */}
+      <div style={{
+        width: 44, display: 'flex', justifyContent: 'center', zIndex: 1,
+      }}>
         <div style={{
-          width: 18, height: 18, borderRadius: '50%',
+          width: 22, height: 22, borderRadius: '50%',
           background: done ? C.GRASS_D : '#FFFFFF',
           border: `2px solid ${done ? C.GRASS_D : '#C5CEC8'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {done && (
-            <svg width="10" height="10" viewBox="0 0 12 12">
+          {done ? (
+            <svg width="11" height="11" viewBox="0 0 12 12">
               <path d="M2 6 L 5 9 L 10 3" stroke="#fff" strokeWidth="2.2" fill="none"
                 strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
+          ) : (
+            <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#C5CEC8' }}/>
           )}
         </div>
-      </button>
+      </div>
 
-      {/* Tap the label area to open detail (fallback: toggle done if no detail) */}
-      <button
-        onClick={hasDetail ? onOpenDetail : onToggleDone}
-        style={{
-          flex: 1, minWidth: 0, background: 'transparent', border: 'none', cursor: 'pointer',
-          padding: '4px 0', textAlign: 'left', fontFamily: FONT.sans, color: 'inherit',
-        }}>
+      {/* Tap row → open session */}
+      <button onClick={onStart} style={{
+        flex: 1, minWidth: 0, background: 'transparent', border: 'none', cursor: 'pointer',
+        padding: '4px 0', textAlign: 'left', fontFamily: FONT.sans, color: 'inherit',
+      }}>
         <div style={{
-          fontSize: 13, fontWeight: done ? 500 : 600, letterSpacing: -0.1,
-          color: done ? theme.textSec : theme.text,
-          textDecoration: done ? 'line-through' : 'none',
-          textDecorationColor: C.GRASS_D + 'aa',
-        }}>{drill.name}</div>
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <div style={{
+            fontSize: 13, fontWeight: 600, letterSpacing: -0.1, color: theme.text,
+          }}>{drill.name}</div>
+          {stars > 0 && (
+            <div style={{ display: 'flex', gap: 1 }}>
+              {[1, 2, 3].map(n => (
+                <svg key={n} width="10" height="10" viewBox="0 0 24 24">
+                  <path d="M12 2 L14.5 9 L22 9 L16 13 L18.5 20 L12 16 L5.5 20 L8 13 L2 9 L9.5 9 Z"
+                    fill={stars >= n ? '#FFB93D' : 'transparent'}
+                    stroke={stars >= n ? '#D49622' : '#C5CEC8'}
+                    strokeWidth="1.5" strokeLinejoin="round"/>
+                </svg>
+              ))}
+            </div>
+          )}
+        </div>
         <div style={{
           fontSize: 10.5, color: theme.textSec, marginTop: 2,
           fontFamily: FONT.mono, letterSpacing: 0.3,
         }}>{drill.time} · {drill.detail}</div>
       </button>
 
+      {/* Play chip */}
+      <button onClick={onStart} style={{
+        background: done ? C.GRASS_SOFT : C.GRASS_D,
+        color: done ? C.GRASS_D : '#fff',
+        border: `1px solid ${done ? C.GRASS_D + '55' : 'transparent'}`,
+        borderRadius: 14, padding: '4px 10px',
+        fontSize: 10, fontWeight: 700, cursor: 'pointer',
+        fontFamily: FONT.mono, flexShrink: 0, letterSpacing: 0.5,
+      }}>{done ? 'もう一度' : 'プレイ'}</button>
+
       {hasDetail && (
-        <button onClick={onOpenDetail} style={{
+        <button onClick={(e) => { e.stopPropagation(); onOpenDetail(); }} style={{
           background: 'transparent', color: theme.textSec,
           border: `1px solid ${theme.border}`, borderRadius: 4,
           padding: '3px 8px', fontSize: 10, fontWeight: 500, cursor: 'pointer',
           fontFamily: FONT.sans, flexShrink: 0,
-        }}>詳細 ›</button>
+        }}>解説</button>
       )}
     </div>
   );
@@ -595,7 +738,7 @@ function ModeCard({ theme, onClick, badge, title, sub, desc, primary }) {
 // ─────────────────────────────────────────────────────────────
 // Drill — goal + conditions + drill lists with completion
 // ─────────────────────────────────────────────────────────────
-function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, toggleDrill, onOpenDetail, onOpenTest, onFinish, onBack }) {
+function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, toggleDrill, onOpenDetail, onOpenTest, onStartSession, onFinish, onBack }) {
   const lib = DRILL_LIBRARY[challengeKey];
   const [noteInput, setNoteInput] = React.useState('');
   const [notes, setNotes] = React.useState([]);
@@ -641,43 +784,14 @@ function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, togg
           <div style={{ fontSize: 12, color: theme.textSec, marginTop: 2 }}>{lib.challengeSub}</div>
         </div>
 
-        {/* Goal metric — dark hero card */}
+        {/* Drill progress — dark hero card (replaces goal card; goal moves to Clubhouse CTA) */}
         <div style={{ padding: '8px 16px 12px' }}>
-          <div style={{ background: theme.text, color: theme.bg, borderRadius: 8, padding: 14 }}>
-            <div style={{
-              fontFamily: FONT.mono, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase',
-              opacity: 0.5, fontWeight: 500,
-            }}>{lib.goal.label}</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginTop: 8 }}>
-              <div style={{ fontFamily: FONT.mono, fontSize: 36, fontWeight: 400, letterSpacing: -1.2, lineHeight: 1 }}>
-                {lib.goal.targetLabel}
-              </div>
-              <div style={{ fontSize: 12, opacity: 0.65, flex: 1 }}>{lib.goal.metric} を目指す</div>
-            </div>
-            <div style={{
-              marginTop: 10, padding: '10px 12px',
-              background: 'rgba(255,255,255,0.08)', borderRadius: 6,
-              fontSize: 11.5, lineHeight: 1.55, opacity: 0.85,
-            }}>
-              {lib.goal.benchmark}
-            </div>
-          </div>
-        </div>
-
-        {/* Progress for this challenge */}
-        <div style={{ padding: '2px 16px 10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{
-              fontFamily: FONT.mono, fontSize: 10, color: theme.textTer,
-              letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 500,
-            }}>条件別ドリル</div>
-            <div style={{ fontFamily: FONT.mono, fontSize: 11, color: theme.textSec }}>
-              <span style={{ color: theme.text, fontWeight: 500 }}>{doneCount}</span>/{totalCount} · {pct}%
-            </div>
-          </div>
-          <div style={{ height: 3, background: theme.border, borderRadius: 1, overflow: 'hidden' }}>
-            <div style={{ width: `${pct}%`, height: '100%', background: theme.text, transition: 'width .4s' }}/>
-          </div>
+          <DrillProgressHero
+            theme={theme}
+            lib={lib}
+            challengeKey={challengeKey}
+            completions={completions}
+          />
         </div>
 
         {/* Fairway roadmap — each condition = one hole */}
@@ -690,6 +804,7 @@ function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, togg
             toggleDrill={toggleDrill}
             onOpenDetail={onOpenDetail}
             onOpenTest={onOpenTest}
+            onStartSession={onStartSession}
           />
         </div>
 
