@@ -49,6 +49,7 @@ function PracticeScreen({ theme, go }) {
     return <DrillScreen theme={theme} go={go} challengeKey={challenge} challengeMeta={CHALLENGES[challenge]}
       completions={completions} toggleDrill={toggleDrill}
       onOpenDetail={(dId) => { setActiveDrillId(dId); setPhase('drillDetail'); }}
+      onOpenTest={() => setPhase('drillTest')}
       onFinish={(session) => { setLastSession(session); setPhase('summary'); }}
       onBack={() => setPhase('hub')}/>;
   }
@@ -59,6 +60,12 @@ function PracticeScreen({ theme, go }) {
       isDone={!!completions[key]?.done}
       onToggleDone={() => toggleDrill(challenge, activeDrillId)}
       onBack={() => setPhase('drill')}/>;
+  }
+  if (phase === 'drillTest') {
+    return <DrillTestScreen theme={theme}
+      challengeKey={challenge}
+      onBack={() => setPhase('drill')}
+      onDone={() => setPhase('drill')}/>;
   }
   if (phase === 'roundTest') {
     return <RoundTestScreen theme={theme} go={go} challenge={CHALLENGES[challenge]}
@@ -198,6 +205,315 @@ function PracticeHub({ theme, go, challenges, challenge, setChallenge, completio
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// Fairway roadmap — "course" visualization of challenge drills.
+// Each condition = one hole. Each drill = a distance marker on the fairway.
+// Clubhouse Challenge at the bottom = goal metric test.
+// ─────────────────────────────────────────────────────────────
+// Fixed palette so fairway look stays consistent across themes
+const FAIRWAY_PALETTE = {
+  GRASS: '#7FBF94',
+  GRASS_D: '#4E8E67',
+  GRASS_SOFT: 'rgba(127,191,148,0.10)',
+  FAIRWAY_BG: '#D4EADC',
+  FAIRWAY_EDGE: '#A5CDB3',
+  INK_LIGHT: '#FFFFFF',
+};
+
+function FairwayRoadmap({ theme, lib, challengeKey, completions, toggleDrill, onOpenDetail, onOpenTest }) {
+  const C = FAIRWAY_PALETTE;
+  // Flat list (for overall progress)
+  const flat = lib.conditions.flatMap(cond => cond.drills);
+  const doneCount = flat.filter(d => completions[`${challengeKey}/${d.id}`]?.done).length;
+  const totalCount = flat.length;
+  const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  // Inject keyframes once per mount
+  const fairwayKeyframes = `
+    @keyframes fwPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); } 50% { box-shadow: 0 0 0 8px rgba(255,255,255,0); } }
+    @keyframes fwShimmer { 0%,100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(-3px); opacity: 1; } }
+  `;
+
+  return (
+    <div style={{
+      border: `1px solid ${theme.border}`, borderRadius: 10, overflow: 'hidden',
+      background: theme.surface,
+    }}>
+      <style>{fairwayKeyframes}</style>
+
+      {/* Course header (hole count + overall progress) */}
+      <div style={{
+        padding: '12px 16px',
+        background: `linear-gradient(135deg, ${C.GRASS_D}, ${C.GRASS})`,
+        color: C.INK_LIGHT,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+        }}>
+          <div style={{
+            fontFamily: FONT.mono, fontSize: 9, letterSpacing: 1.2,
+            textTransform: 'uppercase', opacity: 0.75, fontWeight: 500,
+          }}>Course · {lib.conditions.length}H</div>
+          <div style={{ fontFamily: FONT.mono, fontSize: 11, fontWeight: 500, letterSpacing: 0.3 }}>
+            {doneCount}/{totalCount} · {pct}%
+          </div>
+        </div>
+        <div style={{
+          marginTop: 8, height: 4, background: 'rgba(255,255,255,0.3)',
+          borderRadius: 2, overflow: 'hidden',
+        }}>
+          <div style={{
+            width: `${pct}%`, height: '100%',
+            background: 'rgba(255,255,255,0.95)', transition: 'width .4s',
+          }}/>
+        </div>
+      </div>
+
+      {/* Holes */}
+      <div style={{ background: C.GRASS_SOFT }}>
+        {lib.conditions.map((cond, hIdx) => (
+          <FairwayHole
+            key={cond.key}
+            theme={theme}
+            hole={hIdx + 1}
+            cond={cond}
+            challengeKey={challengeKey}
+            completions={completions}
+            toggleDrill={toggleDrill}
+            onOpenDetail={onOpenDetail}
+          />
+        ))}
+
+        {/* Clubhouse Challenge */}
+        <ClubhouseChallenge
+          theme={theme}
+          lib={lib}
+          allDone={doneCount === totalCount && totalCount > 0}
+          onOpenTest={onOpenTest}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FairwayHole({ theme, hole, cond, challengeKey, completions, toggleDrill, onOpenDetail }) {
+  const C = FAIRWAY_PALETTE;
+  const condDone = cond.drills.filter(d => completions[`${challengeKey}/${d.id}`]?.done).length;
+  const total = cond.drills.length;
+  const allDone = condDone === total && total > 0;
+
+  return (
+    <div style={{ borderBottom: `1px dashed ${C.FAIRWAY_EDGE}` }}>
+      {/* Hole header */}
+      <div style={{
+        padding: '10px 16px 4px',
+        display: 'flex', alignItems: 'baseline', gap: 10,
+        background: 'rgba(255,255,255,0.4)',
+      }}>
+        <span style={{
+          fontFamily: FONT.mono, fontSize: 10, letterSpacing: 1, fontWeight: 600,
+          color: C.GRASS_D, textTransform: 'uppercase',
+        }}>Hole {hole} · Par {total}</span>
+        <span style={{ flex: 1, height: 1, background: C.FAIRWAY_EDGE }}/>
+        <span style={{ fontFamily: FONT.mono, fontSize: 11, fontWeight: 500, color: theme.text }}>
+          {condDone}/{total}
+        </span>
+      </div>
+
+      {/* Title + why */}
+      <div style={{ padding: '4px 16px 8px' }}>
+        <div style={{ fontSize: 14.5, fontWeight: 700, letterSpacing: -0.2, color: theme.text }}>
+          {cond.title}
+        </div>
+        <div style={{ fontSize: 11, color: theme.textSec, marginTop: 3, lineHeight: 1.55 }}>
+          {cond.sub}
+        </div>
+      </div>
+
+      {/* Why note */}
+      <div style={{ padding: '0 16px 10px' }}>
+        <div style={{
+          fontSize: 11, color: theme.textSec, lineHeight: 1.55,
+          padding: '8px 10px', background: 'rgba(255,255,255,0.5)',
+          borderRadius: 6, borderLeft: `2px solid ${C.GRASS_D}`,
+        }}>
+          <b style={{ color: theme.text, fontWeight: 600 }}>なぜこの要素？</b>　{cond.why}
+        </div>
+      </div>
+
+      {/* Fairway with drills */}
+      <div style={{ position: 'relative', padding: '4px 16px 14px' }}>
+        {/* Fairway strip */}
+        <div style={{
+          position: 'absolute', left: 30, top: 4, bottom: 14, width: 22,
+          background: `linear-gradient(180deg, ${C.FAIRWAY_BG}, ${C.FAIRWAY_BG} 90%, ${C.FAIRWAY_EDGE})`,
+          borderRadius: 11,
+          border: `1px dashed ${C.FAIRWAY_EDGE}`,
+        }}/>
+
+        {/* TEE marker */}
+        <FairwayMarker icon="⛳" label="TEE" color={C.GRASS_D}/>
+
+        {/* Drill nodes */}
+        {cond.drills.map(d => {
+          const done = !!completions[`${challengeKey}/${d.id}`]?.done;
+          const hasDetail = !!(window.DRILL_DETAILS || {})[d.id];
+          return (
+            <FairwayDrillNode
+              key={d.id}
+              theme={theme}
+              drill={d}
+              done={done}
+              hasDetail={hasDetail}
+              onToggleDone={() => toggleDrill(challengeKey, d.id)}
+              onOpenDetail={() => onOpenDetail(d.id)}
+            />
+          );
+        })}
+
+        {/* GREEN marker */}
+        <FairwayMarker icon="🏁" label={allDone ? 'GREEN COMPLETE' : 'GREEN'}
+          color={allDone ? C.GRASS_D : theme.textSec}
+          faded={!allDone}/>
+      </div>
+    </div>
+  );
+}
+
+// Row with an emoji icon centered over the fairway strip + label
+function FairwayMarker({ icon, label, color, faded }) {
+  return (
+    <div style={{
+      position: 'relative', display: 'flex', alignItems: 'center', gap: 14,
+      padding: '6px 0',
+    }}>
+      <div style={{
+        width: 44, display: 'flex', justifyContent: 'center', zIndex: 1,
+        fontSize: 18, lineHeight: 1, opacity: faded ? 0.5 : 1,
+      }}>{icon}</div>
+      <div style={{
+        fontFamily: FONT.mono, fontSize: 10, color, letterSpacing: 0.6, fontWeight: 600,
+        textTransform: 'uppercase',
+      }}>{label}</div>
+    </div>
+  );
+}
+
+function FairwayDrillNode({ theme, drill, done, hasDetail, onToggleDone, onOpenDetail }) {
+  const C = FAIRWAY_PALETTE;
+  return (
+    <div style={{
+      position: 'relative', display: 'flex', alignItems: 'center', gap: 14,
+      padding: '7px 0',
+    }}>
+      {/* Tap the circle to toggle done */}
+      <button onClick={onToggleDone}
+        aria-label={done ? '完了を取り消す' : '完了にする'}
+        style={{
+          width: 44, display: 'flex', justifyContent: 'center',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          padding: '6px 0', zIndex: 1,
+        }}>
+        <div style={{
+          width: 18, height: 18, borderRadius: '50%',
+          background: done ? C.GRASS_D : '#FFFFFF',
+          border: `2px solid ${done ? C.GRASS_D : '#C5CEC8'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {done && (
+            <svg width="10" height="10" viewBox="0 0 12 12">
+              <path d="M2 6 L 5 9 L 10 3" stroke="#fff" strokeWidth="2.2" fill="none"
+                strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </div>
+      </button>
+
+      {/* Tap the label area to open detail (fallback: toggle done if no detail) */}
+      <button
+        onClick={hasDetail ? onOpenDetail : onToggleDone}
+        style={{
+          flex: 1, minWidth: 0, background: 'transparent', border: 'none', cursor: 'pointer',
+          padding: '4px 0', textAlign: 'left', fontFamily: FONT.sans, color: 'inherit',
+        }}>
+        <div style={{
+          fontSize: 13, fontWeight: done ? 500 : 600, letterSpacing: -0.1,
+          color: done ? theme.textSec : theme.text,
+          textDecoration: done ? 'line-through' : 'none',
+          textDecorationColor: C.GRASS_D + 'aa',
+        }}>{drill.name}</div>
+        <div style={{
+          fontSize: 10.5, color: theme.textSec, marginTop: 2,
+          fontFamily: FONT.mono, letterSpacing: 0.3,
+        }}>{drill.time} · {drill.detail}</div>
+      </button>
+
+      {hasDetail && (
+        <button onClick={onOpenDetail} style={{
+          background: 'transparent', color: theme.textSec,
+          border: `1px solid ${theme.border}`, borderRadius: 4,
+          padding: '3px 8px', fontSize: 10, fontWeight: 500, cursor: 'pointer',
+          fontFamily: FONT.sans, flexShrink: 0,
+        }}>詳細 ›</button>
+      )}
+    </div>
+  );
+}
+
+function ClubhouseChallenge({ theme, lib, allDone, onOpenTest }) {
+  const C = FAIRWAY_PALETTE;
+  // Best record (if any)
+  const best = (() => {
+    try {
+      const all = JSON.parse(localStorage.getItem('gs_test_results') || '[]');
+      const forThis = all.filter(r => r.challengeKey === (lib._key || null));
+      if (!forThis.length) return null;
+      return forThis.reduce((b, r) => (r.pct > (b?.pct || 0) ? r : b), null);
+    } catch { return null; }
+  })();
+
+  return (
+    <button onClick={onOpenTest} style={{
+      width: '100%', border: 'none', cursor: 'pointer',
+      padding: '18px 16px 18px',
+      background: `linear-gradient(135deg, ${C.GRASS_D}, #2F6A47)`,
+      color: C.INK_LIGHT, textAlign: 'left',
+      fontFamily: FONT.sans,
+      display: 'flex', alignItems: 'center', gap: 14,
+      position: 'relative',
+    }}>
+      {/* Trophy icon */}
+      <div style={{
+        width: 48, height: 48, flexShrink: 0, borderRadius: 24,
+        background: 'rgba(255,255,255,0.15)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 22, lineHeight: 1,
+        animation: allDone ? 'fwPulse 2.2s ease-out infinite' : 'none',
+      }}>🏆</div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontFamily: FONT.mono, fontSize: 9, letterSpacing: 1.2,
+          textTransform: 'uppercase', opacity: 0.75, fontWeight: 600,
+        }}>Clubhouse Challenge</div>
+        <div style={{
+          fontSize: 16, fontWeight: 700, marginTop: 4, letterSpacing: -0.2,
+        }}>
+          {lib.goal.metric}テスト
+        </div>
+        <div style={{ fontSize: 11.5, opacity: 0.85, marginTop: 3 }}>
+          目標 {lib.goal.targetLabel}
+          {best && <span style={{ marginLeft: 8, opacity: 0.7 }}>· ベスト {best.pct}%</span>}
+        </div>
+      </div>
+
+      <span style={{
+        fontFamily: FONT.mono, fontSize: 18, fontWeight: 500, opacity: 0.85,
+      }}>→</span>
+    </button>
+  );
+}
+
 // Favorites section — shows favorited drills; hidden when list is empty.
 function FavoritesSection({ theme, onOpen }) {
   const [favs, setFavs] = React.useState(() => (window.getFavDrills?.() || []));
@@ -279,7 +595,7 @@ function ModeCard({ theme, onClick, badge, title, sub, desc, primary }) {
 // ─────────────────────────────────────────────────────────────
 // Drill — goal + conditions + drill lists with completion
 // ─────────────────────────────────────────────────────────────
-function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, toggleDrill, onOpenDetail, onFinish, onBack }) {
+function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, toggleDrill, onOpenDetail, onOpenTest, onFinish, onBack }) {
   const lib = DRILL_LIBRARY[challengeKey];
   const [noteInput, setNoteInput] = React.useState('');
   const [notes, setNotes] = React.useState([]);
@@ -364,106 +680,17 @@ function DrillScreen({ theme, go, challengeKey, challengeMeta, completions, togg
           </div>
         </div>
 
-        {/* Conditions */}
-        <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {lib.conditions.map(cond => {
-            const condDone = cond.drills.filter(d => completions[`${challengeKey}/${d.id}`]?.done).length;
-            const open = expanded === cond.key;
-            const allDone = condDone === cond.drills.length && cond.drills.length > 0;
-            return (
-              <Card key={cond.key} theme={theme} padding={0}>
-                <button onClick={()=>setExpanded(open ? null : cond.key)} style={{
-                  width: '100%', background: 'transparent', border: 'none', cursor: 'pointer',
-                  padding: 14, textAlign: 'left', color: 'inherit', fontFamily: 'inherit',
-                  display: 'flex', gap: 12, alignItems: 'center',
-                }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: 4, flexShrink: 0,
-                    background: allDone ? theme.text : theme.surfaceAlt,
-                    color: allDone ? theme.bg : theme.textSec,
-                    border: allDone ? 'none' : `1px solid ${theme.border}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: FONT.mono, fontSize: 11, fontWeight: 500,
-                  }}>
-                    {allDone ? Icon.check(theme.bg, 16) : `${condDone}/${cond.drills.length}`}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: -0.2 }}>{cond.title}</div>
-                    <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 2 }}>{cond.sub}</div>
-                  </div>
-                  <span style={{ fontFamily: FONT.mono, color: theme.textTer, fontSize: 14, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>›</span>
-                </button>
-
-                {open && (
-                  <div style={{ borderTop: `1px solid ${theme.border}`, padding: '12px 14px 14px' }}>
-                    <div style={{
-                      fontSize: 11.5, color: theme.textSec, lineHeight: 1.55, marginBottom: 12,
-                      padding: 10, background: theme.surfaceAlt, borderRadius: 6,
-                      borderLeft: `2px solid ${theme.borderStrong}`,
-                    }}>
-                      <b style={{ color: theme.text, fontWeight: 600 }}>なぜこの条件？</b><br/>{cond.why}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {cond.drills.map(d => {
-                        const done = !!completions[`${challengeKey}/${d.id}`]?.done;
-                        const hasDetail = !!(window.DRILL_DETAILS || {})[d.id];
-                        return (
-                          <div key={d.id} style={{
-                            background: done ? theme.surfaceAlt : theme.surface,
-                            border: `1px solid ${theme.border}`,
-                            borderRadius: 6,
-                            display: 'flex', alignItems: 'stretch',
-                            overflow: 'hidden',
-                          }}>
-                            <button onClick={()=>toggleDrill(challengeKey, d.id)}
-                              aria-label={done ? '完了を取り消す' : '完了にする'}
-                              style={{
-                                background: 'transparent', border: 'none', cursor: 'pointer',
-                                padding: '10px 8px 10px 12px', display: 'flex', alignItems: 'center',
-                              }}>
-                              <div style={{
-                                width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                                background: done ? theme.text : 'transparent',
-                                border: done ? 'none' : `1.5px solid ${theme.borderStrong}`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              }}>
-                                {done && Icon.check(theme.bg, 12)}
-                              </div>
-                            </button>
-                            <button onClick={()=> hasDetail ? onOpenDetail(d.id) : toggleDrill(challengeKey, d.id)}
-                              style={{
-                                flex: 1, background: 'transparent', border: 'none', cursor: 'pointer',
-                                padding: '10px 8px', textAlign: 'left',
-                                fontFamily: FONT.sans, color: 'inherit',
-                              }}>
-                              <div style={{
-                                fontSize: 13, fontWeight: 500,
-                                textDecoration: done ? 'line-through' : 'none',
-                                color: done ? theme.textSec : theme.text,
-                              }}>{d.name}</div>
-                              <div style={{ fontSize: 11, color: theme.textSec, marginTop: 2 }}>{d.detail}</div>
-                            </button>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 10px 0 4px', flexShrink: 0 }}>
-                              <div style={{ fontFamily: FONT.mono, fontSize: 10, color: theme.textSec }}>{d.time}</div>
-                              {hasDetail && (
-                                <button onClick={()=>onOpenDetail(d.id)} style={{
-                                  background: 'transparent', color: theme.textSec,
-                                  border: `1px solid ${theme.border}`,
-                                  borderRadius: 4, padding: '3px 8px',
-                                  fontSize: 10, fontWeight: 500, cursor: 'pointer',
-                                  fontFamily: FONT.sans,
-                                }}>詳細 ›</button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            );
-          })}
+        {/* Fairway roadmap — each condition = one hole */}
+        <div style={{ padding: '0 16px 12px' }}>
+          <FairwayRoadmap
+            theme={theme}
+            lib={lib}
+            challengeKey={challengeKey}
+            completions={completions}
+            toggleDrill={toggleDrill}
+            onOpenDetail={onOpenDetail}
+            onOpenTest={onOpenTest}
+          />
         </div>
 
         {/* Notes */}
