@@ -309,9 +309,31 @@ function ChallengePickRow({ theme, challengeKey, meta, selected, completions, on
 }
 
 // ─────────────────────────────────────────────────────────────
-// Fairway roadmap — "course" visualization of challenge drills.
-// Each condition = one hole. Each drill = a distance marker on the fairway.
-// Clubhouse Challenge at the bottom = goal metric test.
+// Session helpers — read gs_drill_sessions for best result per drill.
+// CLEAR_STARS = 3 means only ★★★ sessions count as "cleared".
+// ─────────────────────────────────────────────────────────────
+const CLEAR_STARS = 3;
+function _allDrillSessions() {
+  try { return JSON.parse(localStorage.getItem('gs_drill_sessions') || '[]'); }
+  catch { return []; }
+}
+function getBestDrillSession(challengeKey, drillId) {
+  const all = _allDrillSessions();
+  const forThis = all.filter(r => r.challengeKey === challengeKey && r.drillId === drillId);
+  if (!forThis.length) return null;
+  return forThis.reduce((b, r) =>
+    (r.stars > (b?.stars || 0) || (r.stars === (b?.stars || 0) && r.pct > (b?.pct || 0)) ? r : b),
+    null);
+}
+function isDrillDone(challengeKey, drillId, completions) {
+  const legacy = !!completions?.[`${challengeKey}/${drillId}`]?.done;
+  if (legacy) return true;
+  const best = getBestDrillSession(challengeKey, drillId);
+  return !!(best && best.stars >= CLEAR_STARS);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Chapter-based drill roadmap — Duolingo-inspired, Linear v2 minimal.
 // ─────────────────────────────────────────────────────────────
 // Gamification tokens — star gold accent only, rest is Linear v2 monochrome
 const STAR_COLOR = '#D49622';
