@@ -6,11 +6,12 @@
 // ─────────────────────────────────────────────────────────────
 // Reps per drill variant — small cycling counter in top-right data chip.
 const DRILL_REPS = {
-  'setup-gate':      5,   // "5球 × 3セット" 感
-  'setup-straight':  10,  // "10球連続成功まで"
-  'setup-over':      5,   // "20球中 16球以上" — 5ずつ表示
-  'setup-metronome': 4,   // "5球 × 4セット"
-  'setup-onehand':   3,   // "3球"
+  'setup-gate':        5,   // "5球 × 3セット" 感
+  'setup-straight':    10,  // "10球連続成功まで"
+  'setup-over':        5,   // "20球中 16球以上" — 5ずつ表示
+  'setup-eyesclosed':  5,   // "5球 × 2セット"
+  'setup-metronome':   4,   // "5球 × 4セット"
+  'setup-onehand':     3,   // "3球"
 };
 
 function DrillDiagram({ variant, theme, view }) {
@@ -148,6 +149,16 @@ function DrillDiagram({ variant, theme, view }) {
       45%    { transform: translateX(30px) scale(1); opacity: 1; }
       95%    { transform: translateX(210px); opacity: 1; }
       100%   { transform: translateX(210px); opacity: 0; }
+    }
+    @keyframes drEyeBlink {
+      0%, 8%     { transform: scaleY(1); }
+      15%, 80%   { transform: scaleY(0.08); }
+      90%, 100%  { transform: scaleY(1); }
+    }
+    @keyframes drEyeFeel {
+      0%, 15%    { opacity: 0; }
+      20%, 75%   { opacity: 1; }
+      85%, 100%  { opacity: 0; }
     }
   `;
 
@@ -292,6 +303,38 @@ function DrillDiagram({ variant, theme, view }) {
           <text x="130" y="142" fontSize="10" fill={ink} textAnchor="middle">3m</text>
           <line x1="200" y1="110" x2="249" y2="110" stroke={theme.warn} strokeWidth="1"/>
           <text x="224" y="102" fontSize="10" fill={theme.warn} textAnchor="middle" fontWeight="700">+30cm</text>
+        </svg>
+      );
+    }
+    if (variant === 'setup-eyesclosed') {
+      return (
+        <svg viewBox="0 0 320 260" width="100%" height="100%">
+          <rect x="0" y="0" width="320" height="260" fill={greenSoft}/>
+          <text x="160" y="24" fontSize="11" fill={sub} textAnchor="middle" fontFamily="monospace">ラインを見てから → 目を閉じる</text>
+          {/* player silhouette */}
+          <g transform="translate(65, 100)">
+            <circle cx="0" cy="0" r="16" fill="#fff" stroke={ink} strokeWidth="1.5"/>
+            {/* animated eye */}
+            <g style={{ transformOrigin: '0 -3px', transformBox: 'fill-box',
+                        animation: 'drEyeBlink 3s ease-in-out infinite' }}>
+              <ellipse cx="-4" cy="-3" rx="3" ry="2.2" fill="#fff" stroke={ink} strokeWidth="0.9"/>
+              <circle cx="-4" cy="-3" r="1.1" fill={ink}/>
+              <ellipse cx="4" cy="-3" rx="3" ry="2.2" fill="#fff" stroke={ink} strokeWidth="0.9"/>
+              <circle cx="4" cy="-3" r="1.1" fill={ink}/>
+            </g>
+            <path d="M-5 6 Q 0 9 5 6" stroke={ink} strokeWidth="1" fill="none" strokeLinecap="round"/>
+          </g>
+          {/* ball + cup */}
+          <circle cx="110" cy="185" r="8" fill="#fff" stroke="#000" strokeOpacity="0.2"/>
+          <text x="110" y="210" fontSize="10" fill={sub} textAnchor="middle">ボール</text>
+          <ellipse cx="240" cy="185" rx="9" ry="3.5" fill="#111" opacity="0.8"/>
+          <text x="240" y="210" fontSize="10" fill={sub} textAnchor="middle">カップ</text>
+          {/* closed eye mark */}
+          <g transform="translate(200, 60)">
+            <circle r="14" fill={theme.surface} stroke={ink} strokeWidth="1.2"/>
+            <path d="M-6 0 Q 0 4 6 0" stroke={ink} strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            <text x="0" y="30" fontSize="10" fill={ink} textAnchor="middle" fontWeight="700">目を閉じる</text>
+          </g>
         </svg>
       );
     }
@@ -536,6 +579,69 @@ function DrillDiagram({ variant, theme, view }) {
         {ballWithTrail('drBallOver', 'drBallShadowOver')}
 
         {dataChip('OVER · 3m + 30cm')}
+        {repBadge}
+      </svg>
+    );
+  }
+
+  if (variant === 'setup-eyesclosed') {
+    return (
+      <svg viewBox="0 0 320 260" width="100%" height="100%" style={{ display: 'block' }}>
+        <style>{animCSS}</style>
+        {isoDefs}
+        <rect x={0} y={0} width={320} height={260} fill="url(#drBg)"/>
+        {isoGrass}
+
+        {isoFlag(205, 205)}
+        {isoHole(195, 205, false)}
+
+        {/* Target zone band (same 30cm concept) */}
+        <path d={`M 198 200 Q 230 198 228 212 Q 230 214 198 212 Z`}
+          fill={theme.warn} opacity="0.22"/>
+        <ellipse cx={230} cy={205} rx={8} ry={3} fill="none" stroke={theme.warn} strokeWidth={1.5} strokeDasharray="3 3"/>
+        <text x={230} y={188} fontSize={9} fill={theme.warn} textAnchor="middle" fontFamily='"IBM Plex Mono", monospace' fontWeight={700}>
+          +30cm
+        </text>
+
+        {/* Zone success flash */}
+        <ellipse cx={230} cy={205} rx={14} ry={6}
+          fill="rgba(95,196,139,0.5)"
+          style={{ animation: `drZoneFlash 2.4s ease-out infinite`, opacity: 0 }}/>
+        <ellipse cx={230} cy={205} rx={8} ry={3} fill="#5FC48B" stroke="#2A8D5C" strokeWidth={1.2}
+          style={{ animation: `drZoneFlash 2.4s ease-out infinite`, opacity: 0 }}/>
+
+        {ballWithTrail('drBallOver', 'drBallShadowOver')}
+
+        {/* Large animated eye — closes during the swing, reopens when ball stops */}
+        <g transform="translate(54, 64)">
+          <circle r="28" fill={theme.surface} stroke={ISO_INK} strokeWidth={1.2}/>
+          {/* closed-eye line backdrop (always visible under the blink) */}
+          <path d="M-15 0 Q 0 5 15 0" stroke={ISO_INK} strokeWidth={1.4} fill="none" strokeLinecap="round" opacity={0.4}/>
+          {/* open eye — animates to "closed" via scaleY */}
+          <g style={{
+            transformOrigin: '0 0', transformBox: 'fill-box',
+            animation: 'drEyeBlink 2.4s ease-in-out infinite',
+          }}>
+            <ellipse cx={0} cy={0} rx={16} ry={10} fill="#fff" stroke={ISO_INK} strokeWidth={1.2}/>
+            <circle cx={0} cy={0} r={5.5} fill={ISO_INK}/>
+            <circle cx={-2} cy={-2} r={1.5} fill="#fff"/>
+          </g>
+          <text x={0} y={46} fontSize={10} fill={ISO_INK} textAnchor="middle"
+            fontFamily='"IBM Plex Mono", monospace' fontWeight={600} letterSpacing={0.3}>
+            目を閉じる
+          </text>
+          {/* "感覚で打つ" bubble — appears while eye is closed */}
+          <g style={{ animation: 'drEyeFeel 2.4s ease-in-out infinite', opacity: 0 }}>
+            <rect x={38} y={-10} width={82} height={20} rx={10} fill={ISO_INK}/>
+            <text x={79} y={4} fontSize={10} fill="#fff" textAnchor="middle"
+              fontFamily='"IBM Plex Mono", monospace' fontWeight={600} letterSpacing={0.3}>
+              感覚で打つ
+            </text>
+            <path d="M38 0 L32 0" stroke={ISO_INK} strokeWidth={1}/>
+          </g>
+        </g>
+
+        {dataChip('EYES CLOSED · 3m')}
         {repBadge}
       </svg>
     );

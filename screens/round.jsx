@@ -47,11 +47,19 @@ function RoundScreen({ theme, persona, go }) {
     return startSide === 'IN' ? Math.floor(course.holes.length / 2) : 0;
   })();
 
+  // User-configured optional trackers (OB / hazard / 3putt / fw / upDown / bunker).
+  const enabledOptKeys = React.useMemo(
+    () => (window.getEnabledRoundOptionKeys?.() || ['ob', 'hazard']),
+    []
+  );
+
   const [holeIdx, setHoleIdx] = React.useState(startIdx);
   const [holes, setHoles] = React.useState(() => {
     if (state?.holes) return state.holes;
     return course.holes.map(h => ({
-      ...h, strokes: null, putts: null, ob: false, hazard: false,
+      ...h, strokes: null, putts: null,
+      ob: false, hazard: false,
+      threePutt: false, fairway: null, upDown: null, bunker: false,
     }));
   });
 
@@ -73,8 +81,7 @@ function RoundScreen({ theme, persona, go }) {
 
   const setStroke = (n) => update({ strokes: n });
   const setPutt = (n) => update({ putts: n });
-  const toggleOB = () => update({ ob: !hole.ob });
-  const toggleHazard = () => update({ hazard: !hole.hazard });
+  const toggleField = (k) => update({ [k]: !hole[k] });
 
   const next = () => {
     setHoleIdx(i => Math.min(total - 1, i + 1));
@@ -197,24 +204,19 @@ function RoundScreen({ theme, persona, go }) {
   // OB / ハザードトグルアイコンボタン
   const EventTap = ({ on, label, icon, onClick }) => (
     <button onClick={onClick} style={{
-      flex: 1, padding: '12px 10px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+      width: '100%', padding: '10px 6px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
       background: on ? theme.text : theme.surface,
       color: on ? theme.bg : theme.text,
       border: `1px solid ${on ? theme.text : theme.border}`,
       borderRadius: 6, cursor: 'pointer',
-      fontFamily: FONT.sans, fontSize: 13, fontWeight: 500,
+      fontFamily: FONT.sans, fontSize: 12, fontWeight: 500,
+      minWidth: 0,
     }}>
       {icon}
-      <span>{label}</span>
-      {on && (
-        <span style={{
-          fontFamily: FONT.mono, fontSize: 10, fontWeight: 600,
-          padding: '2px 6px',
-          background: theme.bg, color: theme.text,
-          borderRadius: 3,
-        }}>あり</span>
-      )}
+      <span style={{
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }}>{label}</span>
     </button>
   );
 
@@ -248,19 +250,50 @@ function RoundScreen({ theme, persona, go }) {
     setPuttsExtra(false);
   };
 
-  const iconOB = (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <rect x="1.2" y="1.2" width="11.6" height="11.6" rx="1.4"
-            stroke="currentColor" strokeWidth="1.3" fill="none"/>
-      <path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
-  const iconHazard = (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <path d="M7 1L13 12H1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" fill="none"/>
-      <path d="M7 5v3.2M7 10v.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-    </svg>
-  );
+  // Icon map for each option key
+  const OPT_ICONS = {
+    ob: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1.2" y="1.2" width="11.6" height="11.6" rx="1.4"
+              stroke="currentColor" strokeWidth="1.3" fill="none"/>
+        <path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+    hazard: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1L13 12H1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" fill="none"/>
+        <path d="M7 5v3.2M7 10v.1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+    threePutt: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="4" cy="7" r="1.5" fill="currentColor"/>
+        <circle cx="7" cy="7" r="1.5" fill="currentColor"/>
+        <circle cx="10" cy="7" r="1.5" fill="currentColor"/>
+      </svg>
+    ),
+    fairway: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 12L7 2L12 12" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" fill="none"/>
+        <line x1="2" y1="12" x2="12" y2="12" stroke="currentColor" strokeWidth="1.3"/>
+      </svg>
+    ),
+    upDown: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 10 Q 4 4 7 7 T 12 4" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
+      </svg>
+    ),
+    bunker: (
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 10 Q 5 6 7 9 Q 9 6 12 10" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round"/>
+        <line x1="1" y1="12" x2="13" y2="12" stroke="currentColor" strokeWidth="1" strokeDasharray="1 1"/>
+      </svg>
+    ),
+  };
+  const OPT_LABELS = {
+    ob: 'OB', hazard: 'ハザード', threePutt: '3パット',
+    fairway: 'FWキープ', upDown: '寄せワン', bunker: 'バンカー',
+  };
 
   // ── render ───────────────────────────────────────────────────
   return (
@@ -441,17 +474,36 @@ function RoundScreen({ theme, persona, go }) {
           )}
         </div>
 
-        {/* 発生時のみ: OB / ハザード */}
-        <div style={{ marginBottom: 16 }}>
-          {label('発生時のみタップ', { marginBottom: 8 })}
-          <div style={{ display: 'flex', gap: 6 }}>
-            <EventTap on={hole.ob}     icon={iconOB}     label="OB"     onClick={toggleOB}/>
-            <EventTap on={hole.hazard} icon={iconHazard} label="ハザード" onClick={toggleHazard}/>
+        {/* 発生時のみ — user-configured trackers (Settings) */}
+        {enabledOptKeys.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8,
+            }}>
+              {label('発生時のみタップ')}
+              <span style={{
+                fontFamily: FONT.mono, fontSize: 9, color: theme.textTer, letterSpacing: 0.4,
+              }}>設定で変更</span>
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: enabledOptKeys.length <= 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+              gap: 6,
+            }}>
+              {enabledOptKeys.map(k => (
+                <EventTap key={k}
+                  on={!!hole[k]}
+                  icon={OPT_ICONS[k]}
+                  label={OPT_LABELS[k]}
+                  onClick={() => toggleField(k)}
+                />
+              ))}
+            </div>
+            <div style={{ fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer, marginTop: 6, letterSpacing: 0.3 }}>
+              発生しなければ何もしなくてOK
+            </div>
           </div>
-          <div style={{ fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer, marginTop: 6, letterSpacing: 0.3 }}>
-            発生しなければ何もしなくてOK
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Hole picker — tap any hole to jump (numbers only) */}

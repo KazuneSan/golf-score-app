@@ -40,6 +40,7 @@
   <script type="text/babel" src="screens/round-complete.jsx"></script>
   <script type="text/babel" src="screens/animation-gallery.jsx"></script>
   <script type="text/babel" src="screens/drill-layout-gallery.jsx"></script>
+  <script type="text/babel" src="screens/settings.jsx"></script>
   <script type="text/babel" src="screens/practice.jsx"></script>
   <script type="text/babel" src="screens/drill-detail.jsx"></script>
   <script type="text/babel" src="screens/drill-test.jsx"></script>
@@ -66,6 +67,7 @@
     analysis: '05 Analysis',
     'animation-gallery': 'DEV Animation Gallery',
     'drill-layout-gallery': 'DEV Drill Layout Gallery',
+    settings: 'Settings',
   };
 
   function App() {
@@ -103,6 +105,7 @@
       if (screen === 'round-complete') return <RoundCompleteScreen theme={theme} persona={persona} go={go}/>;
       if (screen === 'animation-gallery') return <AnimationGalleryScreen theme={theme} go={go}/>;
       if (screen === 'drill-layout-gallery') return <DrillLayoutGalleryScreen theme={theme} go={go}/>;
+      if (screen === 'settings')       return <SettingsScreen theme={theme} go={go}/>;
       if (screen === 'practice')       return <PracticeScreen theme={theme} go={go}/>;
       if (screen === 'analysis')       return <AnalysisScreen theme={theme} persona={persona} go={go}/>;
       if (screen === 'onboarding')     return <OnboardingScreen theme={theme} setPersonaKey={(k)=>{setPersonaKey(k); persist({persona: k});}} onFinish={()=>go('home')}/>;

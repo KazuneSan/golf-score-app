@@ -442,6 +442,14 @@ function HomeScreen({ theme, persona, go }) {
         cursor: 'pointer', fontFamily: FONT.sans,
       }}>すべての分析を見る →</button>
 
+      {/* Settings */}
+      <button onClick={() => go('settings')} style={{
+        marginTop: 10, width: '100%', background: 'transparent',
+        color: theme.textSec, border: `1px solid ${theme.border}`,
+        padding: '11px 0', borderRadius: 6, fontSize: 12, fontWeight: 500,
+        cursor: 'pointer', fontFamily: FONT.sans,
+      }}>設定 →</button>
+
       {/* DEV buttons */}
       <button onClick={() => go('animation-gallery')} style={{
         marginTop: 10, width: '100%', background: 'transparent',

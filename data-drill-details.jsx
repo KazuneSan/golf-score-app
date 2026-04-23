@@ -114,7 +114,7 @@ const DRILL_DETAILS = {
 
     purpose: 'ラインを見る時間と打つ動作を分離。距離感は「見た瞬間の感覚」で打つ方が安定する。',
 
-    setup: 'setup-over',
+    setup: 'setup-eyesclosed',
 
     steps: [
       { n: 1, t: 'ラインを見る',     d: 'カップまでの距離をよく見て、素振りで強さを決める。' },
