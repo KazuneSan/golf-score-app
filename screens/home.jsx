@@ -173,6 +173,24 @@ function HomeScreen({ theme, persona, go }) {
     }}>
       <style>{homeKeyframes}</style>
 
+      {/* Top bar — gear icon only */}
+      <div style={{
+        paddingTop: 8, paddingBottom: 2,
+        display: 'flex', justifyContent: 'flex-end',
+      }}>
+        <button onClick={() => go('settings')} aria-label="設定" style={{
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          padding: 6, color: theme.textSec,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
       {/* ① SCORE — BEST as hero (monochrome), LATEST in a dedicated section below */}
       <div
         style={{ ...section(4), cursor: lastRound ? 'pointer' : 'default' }}
@@ -272,7 +290,7 @@ function HomeScreen({ theme, persona, go }) {
         style={{ ...section(20), cursor: lastRound ? 'pointer' : 'default' }}
         onClick={lastRound ? () => reopenComplete(lastRound) : undefined}
       >
-        {label('LATEST ROUND')}
+        {label('直近のラウンド')}
         <div style={{
           display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8,
         }}>
@@ -455,14 +473,6 @@ function HomeScreen({ theme, persona, go }) {
         cursor: 'pointer', fontFamily: FONT.sans,
       }}>すべての分析を見る →</button>
 
-      {/* Settings */}
-      <button onClick={() => go('settings')} style={{
-        marginTop: 10, width: '100%', background: 'transparent',
-        color: theme.textSec, border: `1px solid ${theme.border}`,
-        padding: '11px 0', borderRadius: 6, fontSize: 12, fontWeight: 500,
-        cursor: 'pointer', fontFamily: FONT.sans,
-      }}>設定 →</button>
-
       {/* DEV buttons */}
       <button onClick={() => go('animation-gallery')} style={{
         marginTop: 10, width: '100%', background: 'transparent',
@@ -481,7 +491,9 @@ function HomeScreen({ theme, persona, go }) {
 }
 
 // ─────────────────────────────────────────────────────────
-// Metric cell — minimal, tappable to jump to related drills
+// Metric cell — color-coded by achievement status.
+//   Achieved (ok): green left-accent + green value/bar/label + ✓ chip
+//   Missing:       warn left-accent + neutral value + warn gap chip
 // ─────────────────────────────────────────────────────────
 function MetricCell({ k, cur, tgt, reverse, theme, onClick }) {
   const meta = window.STAT_META?.[k];
@@ -493,30 +505,43 @@ function MetricCell({ k, cur, tgt, reverse, theme, onClick }) {
     : (cur / tgt) * 100));
   const dispCur = meta.decimals ? cur.toFixed(meta.decimals) : cur;
   const dispTgt = meta.decimals ? tgt.toFixed(meta.decimals) : tgt;
+  const dispGap = Math.abs(gap).toFixed(meta.decimals || 0);
+
+  // Colors — accent varies by status
+  const accent = ok ? theme.good : theme.warn;
+  const accentBg = ok ? theme.good + '10' : theme.warn + '0D'; // very subtle tint
+  const borderAccent = ok ? theme.good : (theme.warn + 'aa');
+
   const Wrapper = onClick ? 'button' : 'div';
   return (
     <Wrapper
       onClick={onClick}
       style={{
         minWidth: 0, cursor: onClick ? 'pointer' : 'default',
-        background: 'transparent', border: 'none', padding: 0, textAlign: 'left',
+        background: accentBg,
+        border: 'none',
+        borderLeft: `3px solid ${borderAccent}`,
+        padding: '4px 4px 6px 9px', textAlign: 'left',
         fontFamily: FONT.sans, color: theme.text,
+        borderRadius: 3,
         position: 'relative',
       }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 4,
-      }}>
+      {/* Label + status chip */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <div style={{
           fontSize: 11, color: theme.textSec, letterSpacing: -0.1,
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           flex: 1, minWidth: 0,
         }}>{meta.label}</div>
-        {onClick && (
-          <span style={{
-            fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.2,
-          }}>›</span>
-        )}
+        <span style={{
+          fontFamily: FONT.mono, fontSize: 10, fontWeight: 700, letterSpacing: 0.3,
+          color: accent, flexShrink: 0,
+        }}>
+          {ok ? '✓' : `−${dispGap}${meta.unit}`}
+        </span>
       </div>
+
+      {/* Value */}
       <div style={{
         display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 4,
       }}>
@@ -526,21 +551,25 @@ function MetricCell({ k, cur, tgt, reverse, theme, onClick }) {
         }}>{dispCur}</span>
         <span style={{ fontFamily: FONT.mono, fontSize: 10, color: theme.textSec }}>{meta.unit}</span>
       </div>
+
+      {/* Bar */}
       <div style={{
         height: 2, background: theme.border, borderRadius: 1, overflow: 'hidden',
         marginTop: 6,
       }}>
         <div style={{
           width: `${pct}%`, height: '100%',
-          background: ok ? theme.good : theme.text,
+          background: accent,
           transition: 'width .4s',
         }}/>
       </div>
+
+      {/* Target label */}
       <div style={{
         fontFamily: FONT.mono, fontSize: 9, color: ok ? theme.good : theme.textTer,
         marginTop: 4, letterSpacing: 0.3,
       }}>
-        {ok ? '達成' : `→ ${dispTgt}${meta.unit}`}
+        {ok ? '目標達成' : `目標 ${dispTgt}${meta.unit}`}
       </div>
     </Wrapper>
   );

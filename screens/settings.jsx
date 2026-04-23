@@ -41,6 +41,43 @@ Object.assign(window, {
   getRoundOptions, setRoundOptions, getEnabledRoundOptionKeys,
 });
 
+// ── Language ─────────────────────────────────────────────
+const LANGUAGES = [
+  { k: 'ja', label: '日本語',  sub: 'Japanese · デフォルト' },
+  { k: 'en', label: 'English', sub: 'English' },
+  { k: 'ko', label: '한국어',  sub: 'Korean' },
+];
+function getLang() {
+  try { return localStorage.getItem('gs_lang') || 'ja'; }
+  catch { return 'ja'; }
+}
+function setLang(l) {
+  try { localStorage.setItem('gs_lang', l); } catch {}
+}
+
+// ── Data reset ───────────────────────────────────────────
+// All localStorage keys the app writes to
+const APP_STORAGE_KEYS = [
+  'gs_rounds',             // scoring round history
+  'gs_practice_rounds',    // practice round history
+  'gs_drill_sessions',     // per-drill session results
+  'gs_drill_done',         // legacy drill toggle
+  'gs_test_results',       // clubhouse test results
+  'gs_fav_drills',         // favorite drills
+  'gs_recent_courses',     // recent course search history
+  'gs_round_options',      // per-hole tracker options
+  'gs_lang',               // language preference
+  'gs_target_score',       // diagnosis target
+  'gs_screen',             // last viewed screen
+];
+function resetAllAppData() {
+  try {
+    APP_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+  } catch {}
+}
+
+Object.assign(window, { LANGUAGES, getLang, setLang, APP_STORAGE_KEYS, resetAllAppData });
+
 function SettingsScreen({ theme, go }) {
   const [opts, setOpts] = React.useState(() => getRoundOptions());
   const toggle = (k) => {
@@ -49,6 +86,22 @@ function SettingsScreen({ theme, go }) {
     setRoundOptions(next);
   };
   const enabledCount = Object.values(opts).filter(Boolean).length;
+
+  // Language
+  const [lang, setLangState] = React.useState(() => getLang());
+  const selectLang = (l) => { setLangState(l); setLang(l); };
+
+  // Reset confirmation dialog state
+  const [resetOpen, setResetOpen] = React.useState(false);
+  const doReset = () => {
+    resetAllAppData();
+    setResetOpen(false);
+    // Reset round options local state too
+    setOpts({ ...DEFAULT_ROUND_OPTIONS });
+    setLangState('ja');
+    // Go back to home after reset
+    setTimeout(() => go('home'), 200);
+  };
 
   const label = (txt, style = {}) => (
     <div style={{
@@ -122,16 +175,134 @@ function SettingsScreen({ theme, go }) {
         </div>
       </div>
 
-      {/* Reset */}
-      <div style={{ marginTop: 22 }}>
+      {/* Reset round options to defaults */}
+      <div style={{ marginTop: 14 }}>
         <button onClick={() => { setOpts(DEFAULT_ROUND_OPTIONS); setRoundOptions(DEFAULT_ROUND_OPTIONS); }}
           style={{
             width: '100%', background: 'transparent', color: theme.textSec,
             border: `1px solid ${theme.border}`, borderRadius: 6,
-            padding: '11px 0', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            padding: '10px 0', fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
             fontFamily: FONT.sans,
-          }}>デフォルトに戻す</button>
+          }}>項目設定をデフォルトに戻す</button>
       </div>
+
+      {/* ─── Language ─── */}
+      <div style={{ marginTop: 30 }}>
+        {label('言語 / Language')}
+        <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 6, marginBottom: 10, lineHeight: 1.55 }}>
+          表示言語を選べます。UI全体の翻訳は順次対応予定。
+        </div>
+        <div style={{
+          border: `1px solid ${theme.border}`, borderRadius: 8, background: theme.surface, overflow: 'hidden',
+        }}>
+          {LANGUAGES.map((l, i) => {
+            const on = lang === l.k;
+            return (
+              <div key={l.k}
+                onClick={() => selectLang(l.k)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '13px 14px',
+                  borderBottom: i < LANGUAGES.length - 1 ? `1px solid ${theme.border}` : 'none',
+                  cursor: 'pointer',
+                  background: on ? theme.surfaceAlt : 'transparent',
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: -0.1 }}>{l.label}</div>
+                  <div style={{ fontSize: 10.5, color: theme.textSec, marginTop: 2, letterSpacing: 0.2 }}>
+                    {l.sub}
+                  </div>
+                </div>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                  border: `1.5px solid ${on ? theme.text : theme.borderStrong}`,
+                  background: 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {on && (
+                    <div style={{
+                      width: 10, height: 10, borderRadius: '50%', background: theme.text,
+                    }}/>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Data reset ─── */}
+      <div style={{ marginTop: 30 }}>
+        {label('データ管理')}
+        <div style={{ fontSize: 11.5, color: theme.textSec, marginTop: 6, marginBottom: 10, lineHeight: 1.55 }}>
+          ラウンド履歴・練習ログ・お気に入り・設定などアプリ内のすべてのデータを削除します。この操作は取り消せません。
+        </div>
+        <button onClick={() => setResetOpen(true)} style={{
+          width: '100%', background: 'transparent',
+          color: theme.danger,
+          border: `1px solid ${theme.danger}55`,
+          borderRadius: 6, padding: '12px 0',
+          fontFamily: FONT.sans, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+          letterSpacing: -0.1,
+        }}>
+          すべてのデータを削除（リセット）
+        </button>
+      </div>
+
+      {/* App info at bottom */}
+      <div style={{
+        marginTop: 30, paddingTop: 20,
+        borderTop: `1px solid ${theme.border}`,
+        fontFamily: FONT.mono, fontSize: 9.5, color: theme.textTer,
+        letterSpacing: 0.4, textAlign: 'center', lineHeight: 1.7,
+      }}>
+        Fairway · Golf Score Prototype
+      </div>
+
+      {/* Reset confirmation modal */}
+      {resetOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20,
+        }}
+          onClick={() => setResetOpen(false)}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{
+            background: theme.surface, color: theme.text,
+            borderRadius: 10, padding: '18px 20px 16px',
+            width: '100%', maxWidth: 320,
+            fontFamily: FONT.sans,
+            border: `1px solid ${theme.border}`,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+          }}>
+            <div style={{
+              fontFamily: FONT.mono, fontSize: 9.5, color: theme.danger,
+              letterSpacing: 0.8, textTransform: 'uppercase', fontWeight: 700, marginBottom: 8,
+            }}>Warning</div>
+            <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: -0.2, marginBottom: 8 }}>
+              すべてのデータを削除しますか？
+            </div>
+            <div style={{ fontSize: 12, color: theme.textSec, lineHeight: 1.6, marginBottom: 14 }}>
+              ラウンド履歴・練習ログ・お気に入り・各種設定が全て削除されます。<br/>
+              この操作は <b style={{ color: theme.danger }}>取り消せません</b>。
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setResetOpen(false)} style={{
+                flex: 1, background: 'transparent', color: theme.text,
+                border: `1px solid ${theme.border}`, borderRadius: 6,
+                padding: '11px 0', fontFamily: FONT.sans, fontSize: 13, fontWeight: 500, cursor: 'pointer',
+              }}>キャンセル</button>
+              <button onClick={doReset} style={{
+                flex: 1, background: theme.danger, color: '#fff',
+                border: 'none', borderRadius: 6,
+                padding: '11px 0', fontFamily: FONT.sans, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              }}>削除する</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
