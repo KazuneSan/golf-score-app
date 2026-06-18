@@ -1,19 +1,423 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<title>Fairway · Golf Score Prototype</title>
-<meta http-equiv="refresh" content="0; url=Fairway.html"/>
-<style>
-  html, body { margin: 0; padding: 0; background: #ECECEC; height: 100%; }
-  body { display: flex; align-items: center; justify-content: center;
-    font-family: -apple-system, system-ui, sans-serif; color: #6B6B6B; font-size: 13px; }
-</style>
-</head>
-<body>
-  <p>起動中… <a href="Fairway.html" style="color: #111">こちらをタップ</a></p>
-</body>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f7eedf" />
+    <title>Three.js Waving Character</title>
+    <style>
+      :root {
+        --cream: #f7eedf;
+        --cream-deep: #efd9b8;
+        --grass: #8cc76f;
+        --grass-shadow: #6ba54e;
+        --text: #7d4f28;
+        --ui-bg: rgba(255, 250, 240, 0.88);
+        --ui-border: rgba(125, 79, 40, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top, #fff7ec 0%, var(--cream) 58%, #f0e2ca 100%);
+        font-family: "Trebuchet MS", "Avenir Next", "Hiragino Sans", sans-serif;
+        color: var(--text);
+      }
+
+      body {
+        position: relative;
+      }
+
+      #app {
+        width: 100%;
+        height: 100%;
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+      .hud {
+        position: absolute;
+        top: max(16px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(92vw, 420px);
+        padding: 14px 16px;
+        border: 1px solid var(--ui-border);
+        border-radius: 20px;
+        background: var(--ui-bg);
+        backdrop-filter: blur(10px);
+        text-align: center;
+        box-shadow: 0 12px 32px rgba(125, 79, 40, 0.08);
+        pointer-events: none;
+      }
+
+      .hud h1 {
+        margin: 0;
+        font-size: clamp(1.1rem, 4vw, 1.55rem);
+        line-height: 1.15;
+        letter-spacing: 0.02em;
+      }
+
+      .hud p {
+        margin: 6px 0 0;
+        font-size: clamp(0.82rem, 3vw, 0.95rem);
+        opacity: 0.82;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hud">
+      <h1>Three.js waving character</h1>
+      <p>Drag to rotate / Pinch to zoom</p>
+    </div>
+    <div id="app"></div>
+
+    <script type="module">
+      import * as THREE from "https://unpkg.com/three@0.166.1/build/three.module.js";
+      import { OrbitControls } from "https://unpkg.com/three@0.166.1/examples/jsm/controls/OrbitControls.js";
+
+      const container = document.getElementById("app");
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf7eedf);
+      scene.fog = new THREE.Fog(0xf7eedf, 9, 16);
+
+      const camera = new THREE.PerspectiveCamera(
+        35,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        100
+      );
+      camera.position.set(0, 2.7, 6.8);
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance",
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      container.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.enablePan = false;
+      controls.minDistance = 5.2;
+      controls.maxDistance = 8.4;
+      controls.minPolarAngle = 0.85;
+      controls.maxPolarAngle = 1.35;
+      controls.target.set(0, 1.75, 0);
+      controls.rotateSpeed = 0.75;
+      controls.zoomSpeed = 0.9;
+
+      const ambientLight = new THREE.HemisphereLight(0xfff5e8, 0x95bb72, 1.7);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.55);
+      keyLight.position.set(4.2, 7.5, 4.8);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.set(1024, 1024);
+      keyLight.shadow.camera.near = 1;
+      keyLight.shadow.camera.far = 20;
+      keyLight.shadow.camera.left = -5;
+      keyLight.shadow.camera.right = 5;
+      keyLight.shadow.camera.top = 5;
+      keyLight.shadow.camera.bottom = -5;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xffddb6, 0.5);
+      fillLight.position.set(-4, 3, 2);
+      scene.add(fillLight);
+
+      const ground = new THREE.Mesh(
+        new THREE.CylinderGeometry(5.2, 5.5, 0.36, 48),
+        new THREE.MeshStandardMaterial({
+          color: 0x88c86a,
+          roughness: 0.95,
+        })
+      );
+      ground.position.y = -0.18;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const grassTop = new THREE.Mesh(
+        new THREE.CircleGeometry(5, 48),
+        new THREE.MeshStandardMaterial({
+          color: 0x96d773,
+          roughness: 1,
+        })
+      );
+      grassTop.rotation.x = -Math.PI / 2;
+      grassTop.position.y = 0.002;
+      grassTop.receiveShadow = true;
+      scene.add(grassTop);
+
+      const character = new THREE.Group();
+      scene.add(character);
+
+      const skin = new THREE.MeshStandardMaterial({ color: 0xf4b98d, roughness: 0.95 });
+      const hair = new THREE.MeshStandardMaterial({ color: 0x2e2629, roughness: 1 });
+      const shirt = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
+      const shorts = new THREE.MeshStandardMaterial({ color: 0x24385f, roughness: 0.95 });
+      const shoes = new THREE.MeshStandardMaterial({ color: 0xf8f8f8, roughness: 0.85 });
+      const glasses = new THREE.MeshStandardMaterial({ color: 0x3d2d24, roughness: 0.65 });
+      const sole = new THREE.MeshStandardMaterial({ color: 0xe7dfd6, roughness: 1 });
+      const noseMat = new THREE.MeshStandardMaterial({ color: 0xe8a27d, roughness: 0.95 });
+      const black = new THREE.MeshStandardMaterial({ color: 0x2b221d, roughness: 1 });
+      const blush = new THREE.MeshStandardMaterial({
+        color: 0xf5a9a0,
+        roughness: 1,
+        transparent: true,
+        opacity: 0.55,
+      });
+
+      const torso = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.55, 0.85, 8, 16),
+        shirt
+      );
+      torso.position.y = 1.28;
+      torso.castShadow = true;
+      character.add(torso);
+
+      const shortsMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.95, 0.52, 0.7),
+        shorts
+      );
+      shortsMesh.position.set(0, 0.76, 0);
+      shortsMesh.castShadow = true;
+      character.add(shortsMesh);
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.88, 32, 32),
+        skin
+      );
+      head.scale.set(1, 1.04, 0.98);
+      head.position.y = 2.48;
+      head.castShadow = true;
+      character.add(head);
+
+      const hairCap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.92, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.62),
+        hair
+      );
+      hairCap.position.set(0, 2.72, -0.02);
+      hairCap.rotation.x = -0.1;
+      hairCap.castShadow = true;
+      character.add(hairCap);
+
+      const fringeLeft = new THREE.Mesh(
+        new THREE.SphereGeometry(0.39, 24, 24),
+        hair
+      );
+      fringeLeft.scale.set(1.2, 0.7, 0.78);
+      fringeLeft.position.set(-0.31, 2.46, 0.58);
+      fringeLeft.rotation.z = 0.42;
+      fringeLeft.castShadow = true;
+      character.add(fringeLeft);
+
+      const fringeRight = fringeLeft.clone();
+      fringeRight.position.x = 0.31;
+      fringeRight.rotation.z = -0.42;
+      character.add(fringeRight);
+
+      const sideHairLeft = new THREE.Mesh(
+        new THREE.SphereGeometry(0.26, 20, 20),
+        hair
+      );
+      sideHairLeft.scale.set(0.9, 1.2, 0.8);
+      sideHairLeft.position.set(-0.72, 2.34, 0.07);
+      sideHairLeft.castShadow = true;
+      character.add(sideHairLeft);
+
+      const sideHairRight = sideHairLeft.clone();
+      sideHairRight.position.x = 0.72;
+      character.add(sideHairRight);
+
+      const earLeft = new THREE.Mesh(new THREE.SphereGeometry(0.16, 20, 20), skin);
+      earLeft.position.set(-0.84, 2.37, 0.02);
+      earLeft.castShadow = true;
+      character.add(earLeft);
+
+      const earRight = earLeft.clone();
+      earRight.position.x = 0.84;
+      character.add(earRight);
+
+      const glassesGroup = new THREE.Group();
+      glassesGroup.position.set(0, 2.36, 0.72);
+      character.add(glassesGroup);
+
+      const lensGeometry = new THREE.TorusGeometry(0.22, 0.03, 12, 24);
+      const leftLens = new THREE.Mesh(lensGeometry, glasses);
+      leftLens.position.x = -0.24;
+      glassesGroup.add(leftLens);
+
+      const rightLens = new THREE.Mesh(lensGeometry, glasses);
+      rightLens.position.x = 0.24;
+      glassesGroup.add(rightLens);
+
+      const bridge = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.03, 0.03),
+        glasses
+      );
+      glassesGroup.add(bridge);
+
+      const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
+      const eyeLeft = new THREE.Mesh(eyeGeometry, black);
+      eyeLeft.position.set(-0.24, 2.35, 0.81);
+      character.add(eyeLeft);
+
+      const eyeRight = eyeLeft.clone();
+      eyeRight.position.x = 0.24;
+      character.add(eyeRight);
+
+      const nose = new THREE.Mesh(
+        new THREE.SphereGeometry(0.055, 14, 14),
+        noseMat
+      );
+      nose.scale.set(1, 0.8, 1.1);
+      nose.position.set(0, 2.17, 0.85);
+      character.add(nose);
+
+      const blushLeft = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 16, 16),
+        blush
+      );
+      blushLeft.scale.set(1.5, 0.55, 0.35);
+      blushLeft.position.set(-0.45, 2.14, 0.76);
+      character.add(blushLeft);
+
+      const blushRight = blushLeft.clone();
+      blushRight.position.x = 0.45;
+      character.add(blushRight);
+
+      const mouth = new THREE.Mesh(
+        new THREE.TorusGeometry(0.08, 0.015, 8, 16, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0x8b4f48, roughness: 1 })
+      );
+      mouth.rotation.z = Math.PI;
+      mouth.position.set(0, 1.99, 0.83);
+      character.add(mouth);
+
+      function createLeg(x) {
+        const leg = new THREE.Group();
+
+        const thigh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.13, 0.12, 0.52, 16),
+          skin
+        );
+        thigh.position.y = 0.35;
+        thigh.castShadow = true;
+        leg.add(thigh);
+
+        const shoeBase = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 20, 20),
+          shoes
+        );
+        shoeBase.scale.set(1.25, 0.7, 1.6);
+        shoeBase.position.set(0, 0.02, 0.07);
+        shoeBase.castShadow = true;
+        leg.add(shoeBase);
+
+        const shoeSole = new THREE.Mesh(
+          new THREE.BoxGeometry(0.44, 0.07, 0.56),
+          sole
+        );
+        shoeSole.position.set(0, -0.08, 0.08);
+        shoeSole.castShadow = true;
+        leg.add(shoeSole);
+
+        leg.position.set(x, 0.12, 0);
+        return leg;
+      }
+
+      character.add(createLeg(-0.24));
+      character.add(createLeg(0.24));
+
+      function createArm(options) {
+        const { side, waving } = options;
+        const armPivot = new THREE.Object3D();
+        armPivot.position.set(side * 0.63, 1.63, 0);
+
+        const upperArm = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.12, 0.48, 6, 14),
+          skin
+        );
+        upperArm.position.set(0, -0.32, 0);
+        upperArm.castShadow = true;
+        armPivot.add(upperArm);
+
+        const hand = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 18, 18),
+          skin
+        );
+        hand.scale.set(1, 0.92, 1);
+        hand.position.set(0, -0.67, 0.03);
+        hand.castShadow = true;
+        armPivot.add(hand);
+
+        if (!waving) {
+          armPivot.rotation.z = side * 0.12;
+        } else {
+          armPivot.rotation.z = -0.6;
+          armPivot.rotation.x = 0.28;
+        }
+
+        character.add(armPivot);
+        return armPivot;
+      }
+
+      const leftArmPivot = createArm({ side: -1, waving: false });
+      const rightArmPivot = createArm({ side: 1, waving: true });
+
+      character.rotation.y = 0.18;
+
+      const clock = new THREE.Clock();
+
+      function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      }
+
+      window.addEventListener("resize", onResize);
+
+      function animate() {
+        const elapsed = clock.getElapsedTime();
+        const wave = Math.sin(elapsed * 4.6) * 0.42;
+
+        rightArmPivot.rotation.z = -0.68 + wave;
+        rightArmPivot.rotation.x = 0.22 + Math.cos(elapsed * 4.6) * 0.08;
+        leftArmPivot.rotation.z = -0.14 + Math.sin(elapsed * 1.4) * 0.02;
+
+        character.position.y = Math.sin(elapsed * 1.7) * 0.03;
+        character.rotation.y = 0.18 + Math.sin(elapsed * 0.8) * 0.03;
+
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+
+      animate();
+    </script>
+  </body>
 </html>
