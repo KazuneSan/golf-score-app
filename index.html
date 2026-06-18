@@ -104,7 +104,7 @@
         0.1,
         100
       );
-      camera.position.set(0, 2.58, 6.75);
+      camera.position.set(0, 3.05, 6.15);
 
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -121,19 +121,19 @@
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.enablePan = false;
-      controls.minDistance = 5.3;
-      controls.maxDistance = 7.9;
-      controls.minPolarAngle = 0.85;
-      controls.maxPolarAngle = 1.35;
-      controls.target.set(0, 1.46, 0.08);
+      controls.minDistance = 4.9;
+      controls.maxDistance = 7.2;
+      controls.minPolarAngle = 0.72;
+      controls.maxPolarAngle = 1.08;
+      controls.target.set(0, 1.34, 0.14);
       controls.rotateSpeed = 0.75;
       controls.zoomSpeed = 0.9;
 
-      const ambientLight = new THREE.HemisphereLight(0xfff5e8, 0x95bb72, 1.7);
+      const ambientLight = new THREE.HemisphereLight(0xfff0d8, 0x97b26d, 1.45);
       scene.add(ambientLight);
 
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.55);
-      keyLight.position.set(4.2, 7.5, 4.8);
+      const keyLight = new THREE.DirectionalLight(0xffefdb, 1.95);
+      keyLight.position.set(3.4, 6.8, 5.1);
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.set(1024, 1024);
       keyLight.shadow.camera.near = 1;
@@ -144,8 +144,8 @@
       keyLight.shadow.camera.bottom = -5;
       scene.add(keyLight);
 
-      const fillLight = new THREE.DirectionalLight(0xffddb6, 0.5);
-      fillLight.position.set(-4, 3, 2);
+      const fillLight = new THREE.DirectionalLight(0xffc98f, 0.58);
+      fillLight.position.set(-3.2, 2.8, 2.6);
       scene.add(fillLight);
 
       const ground = new THREE.Mesh(
@@ -267,31 +267,20 @@
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
-        ctx.strokeStyle = "#5c433b";
-        ctx.lineWidth = 28;
-        ctx.beginPath();
-        ctx.moveTo(315, 150);
-        ctx.quadraticCurveTo(370, 118, 435, 142);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(589, 142);
-        ctx.quadraticCurveTo(654, 118, 709, 150);
-        ctx.stroke();
-
         function drawEye(cx) {
           ctx.fillStyle = "#221914";
           ctx.beginPath();
-          ctx.ellipse(cx, 245, 24, 40, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx, 245, 21, 35, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = "#603d2e";
+          ctx.fillStyle = "#3f2b22";
           ctx.beginPath();
-          ctx.ellipse(cx + 3, 245, 15, 29, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 2, 246, 10, 22, 0, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = "#fff8ec";
           ctx.beginPath();
-          ctx.ellipse(cx + 8, 220, 7, 11, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 5, 223, 5, 8, 0, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -308,7 +297,7 @@
 
         ctx.fillStyle = "#f0b883";
         ctx.beginPath();
-        ctx.arc(512, 282, 16, 0, Math.PI * 2);
+        ctx.arc(512, 282, 12, 0, Math.PI * 2);
         ctx.fill();
         return new THREE.CanvasTexture(canvas);
       }
@@ -318,15 +307,15 @@
       faceTexture.needsUpdate = true;
 
       const body = new THREE.Group();
-      body.position.y = 0.02;
+      body.position.y = 0.0;
       character.add(body);
 
       const torso = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.38, 0.42, 8, 16),
+        new THREE.CapsuleGeometry(0.36, 0.34, 8, 16),
         shirt
       );
-      torso.scale.set(1.02, 1, 0.9);
-      torso.position.y = 1.02;
+      torso.scale.set(1, 0.98, 0.9);
+      torso.position.y = 0.96;
       torso.castShadow = true;
       body.add(torso);
 
@@ -334,24 +323,24 @@
         new THREE.BoxGeometry(0.66, 0.1, 0.48),
         shirt
       );
-      shirtBottom.position.set(0, 0.74, 0);
+      shirtBottom.position.set(0, 0.68, 0);
       body.add(shirtBottom);
 
       const shortsMesh = new THREE.Mesh(
         new THREE.BoxGeometry(0.68, 0.28, 0.46),
         shorts
       );
-      shortsMesh.position.set(0, 0.58, 0);
+      shortsMesh.position.set(0, 0.5, 0);
       shortsMesh.castShadow = true;
       body.add(shortsMesh);
 
       function createLeg(x, front = false) {
         const leg = new THREE.Group();
         const shin = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.105, 0.095, front ? 0.52 : 0.44, 16),
+          new THREE.CylinderGeometry(0.105, 0.095, front ? 0.44 : 0.38, 16),
           skin
         );
-        shin.position.y = 0.28;
+        shin.position.y = 0.24;
         shin.castShadow = true;
         leg.add(shin);
 
@@ -371,7 +360,7 @@
         sneakerSole.position.set(0, -0.1, front ? 0.12 : 0.1);
         leg.add(sneakerSole);
 
-        leg.position.set(x, 0.04, front ? 0.14 : 0);
+        leg.position.set(x, 0.03, front ? 0.12 : 0);
         return leg;
       }
 
@@ -386,21 +375,21 @@
         new THREE.SphereGeometry(0.78, 32, 32),
         skin
       );
-      head.scale.set(1.06, 1.02, 0.95);
-      head.position.y = 1.92;
+      head.scale.set(1, 1.02, 0.95);
+      head.position.y = 1.88;
       head.castShadow = true;
       character.add(head);
 
       const cheekLeft = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), skin);
       cheekLeft.scale.set(1.2, 0.9, 1);
-      cheekLeft.position.set(-0.54, 1.76, 0.34);
+      cheekLeft.position.set(-0.52, 1.72, 0.34);
       character.add(cheekLeft);
       const cheekRight = cheekLeft.clone();
       cheekRight.position.x = 0.54;
       character.add(cheekRight);
 
       const earLeft = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), skin);
-      earLeft.position.set(-0.7, 1.9, 0.03);
+      earLeft.position.set(-0.72, 1.86, 0.03);
       earLeft.castShadow = true;
       character.add(earLeft);
       const earRight = earLeft.clone();
@@ -411,39 +400,40 @@
         new THREE.SphereGeometry(0.84, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.64),
         hair
       );
-      hairBack.position.set(0, 2.18, -0.08);
-      hairBack.rotation.x = -0.14;
+      hairBack.scale.set(0.94, 0.95, 1);
+      hairBack.position.set(0, 2.06, -0.08);
+      hairBack.rotation.x = -0.1;
       hairBack.castShadow = true;
       character.add(hairBack);
 
       const partLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 24, 24),
+        new THREE.SphereGeometry(0.39, 24, 24),
         hair
       );
-      partLeft.scale.set(1.28, 1.18, 1);
-      partLeft.position.set(-0.28, 2.16, 0.45);
-      partLeft.rotation.z = -0.05;
+      partLeft.scale.set(1.05, 1, 0.92);
+      partLeft.position.set(-0.22, 2.04, 0.45);
+      partLeft.rotation.z = -0.03;
       partLeft.castShadow = true;
       character.add(partLeft);
 
       const partRight = partLeft.clone();
-      partRight.position.x = 0.28;
-      partRight.rotation.z = 0.05;
+      partRight.position.x = 0.24;
+      partRight.rotation.z = 0.03;
       character.add(partRight);
 
       const hairSideLeft = new THREE.Mesh(
         new THREE.CapsuleGeometry(0.17, 0.22, 6, 12),
         hair
       );
-      hairSideLeft.scale.set(1.06, 1.4, 0.76);
-      hairSideLeft.position.set(-0.52, 1.88, 0.34);
-      hairSideLeft.rotation.z = 0.24;
+      hairSideLeft.scale.set(0.92, 1.16, 0.7);
+      hairSideLeft.position.set(-0.45, 1.88, 0.3);
+      hairSideLeft.rotation.z = 0.2;
       hairSideLeft.castShadow = true;
       character.add(hairSideLeft);
 
       const hairSideRight = hairSideLeft.clone();
-      hairSideRight.position.x = 0.52;
-      hairSideRight.rotation.z = -0.24;
+      hairSideRight.position.x = 0.48;
+      hairSideRight.rotation.z = -0.2;
       character.add(hairSideRight);
 
       for (const [x, rot] of [
@@ -456,7 +446,7 @@
           new THREE.ConeGeometry(0.08, 0.21, 12),
           hair
         );
-        bang.position.set(x, 1.98, 0.7);
+        bang.position.set(x, 1.96, 0.69);
         bang.rotation.x = Math.PI;
         bang.rotation.z = rot;
         bang.castShadow = true;
@@ -474,17 +464,17 @@
       character.add(facePlane);
 
       const glassesGroup = new THREE.Group();
-      glassesGroup.position.set(0, 1.98, 0.82);
+      glassesGroup.position.set(0, 1.95, 0.82);
       character.add(glassesGroup);
 
       const leftLens = new THREE.Mesh(
-        new THREE.TorusGeometry(0.18, 0.028, 12, 24),
+        new THREE.TorusGeometry(0.19, 0.03, 12, 24),
         glasses
       );
-      leftLens.position.x = -0.2;
+      leftLens.position.x = -0.205;
       glassesGroup.add(leftLens);
       const rightLens = leftLens.clone();
-      rightLens.position.x = 0.2;
+      rightLens.position.x = 0.205;
       glassesGroup.add(rightLens);
 
       const bridge = new THREE.Mesh(
@@ -498,7 +488,7 @@
         skin
       );
       nose.scale.set(1, 0.8, 1.1);
-      nose.position.set(0, 1.74, 0.78);
+      nose.position.set(0, 1.75, 0.78);
       character.add(nose);
 
       const mouth = new THREE.Mesh(
@@ -506,7 +496,7 @@
         dark
       );
       mouth.rotation.z = Math.PI;
-      mouth.position.set(0, 1.6, 0.78);
+      mouth.position.set(0, 1.56, 0.78);
       character.add(mouth);
 
       function createHand(open = false) {
@@ -576,11 +566,12 @@
         return pivot;
       }
 
-      const leftArmPivot = createArm(-1, false);
-      const rightArmPivot = createArm(1, true);
+      const leftArmPivot = createArm(-1, true);
+      const rightArmPivot = createArm(1, false);
 
-      character.position.set(0, 0.02, 0.12);
-      character.rotation.y = 0.04;
+      character.scale.setScalar(0.88);
+      character.position.set(0, -0.02, 0.08);
+      character.rotation.y = 0.03;
 
       const clock = new THREE.Clock();
 
@@ -597,11 +588,11 @@
         const elapsed = clock.getElapsedTime();
         const wave = Math.sin(elapsed * 4.6) * 0.42;
 
-        rightArmPivot.rotation.z = -0.76 + wave * 0.7;
-        rightArmPivot.rotation.x = 0.48 + Math.cos(elapsed * 4.6) * 0.06;
-        rightArmPivot.rotation.y = -0.18 + Math.sin(elapsed * 2.3) * 0.025;
-        leftArmPivot.rotation.z = 0.22 + Math.sin(elapsed * 1.2) * 0.015;
-        leftArmPivot.rotation.x = -0.18 + Math.cos(elapsed * 1.2) * 0.01;
+        leftArmPivot.rotation.z = -0.76 + wave * 0.7;
+        leftArmPivot.rotation.x = 0.48 + Math.cos(elapsed * 4.6) * 0.06;
+        leftArmPivot.rotation.y = -0.18 + Math.sin(elapsed * 2.3) * 0.025;
+        rightArmPivot.rotation.z = 0.14 + Math.sin(elapsed * 1.2) * 0.015;
+        rightArmPivot.rotation.x = -0.12 + Math.cos(elapsed * 1.2) * 0.01;
 
         body.rotation.z = Math.sin(elapsed * 1.7) * 0.006;
         character.position.y = 0.02 + Math.sin(elapsed * 1.7) * 0.015;
