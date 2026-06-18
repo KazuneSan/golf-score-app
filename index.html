@@ -174,221 +174,441 @@
       const character = new THREE.Group();
       scene.add(character);
 
-      const skin = new THREE.MeshStandardMaterial({ color: 0xf4b98d, roughness: 0.95 });
-      const hair = new THREE.MeshStandardMaterial({ color: 0x2e2629, roughness: 1 });
-      const shirt = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 });
-      const shorts = new THREE.MeshStandardMaterial({ color: 0x24385f, roughness: 0.95 });
-      const shoes = new THREE.MeshStandardMaterial({ color: 0xf8f8f8, roughness: 0.85 });
-      const glasses = new THREE.MeshStandardMaterial({ color: 0x3d2d24, roughness: 0.65 });
-      const sole = new THREE.MeshStandardMaterial({ color: 0xe7dfd6, roughness: 1 });
-      const noseMat = new THREE.MeshStandardMaterial({ color: 0xe8a27d, roughness: 0.95 });
-      const black = new THREE.MeshStandardMaterial({ color: 0x2b221d, roughness: 1 });
+      const skin = new THREE.MeshStandardMaterial({ color: 0xffdcc5, roughness: 0.95 });
+      const hair = new THREE.MeshStandardMaterial({ color: 0x252226, roughness: 1 });
+      const cardigan = new THREE.MeshStandardMaterial({ color: 0xe9d8ba, roughness: 1 });
+      const shirt = new THREE.MeshStandardMaterial({ color: 0xfffdfa, roughness: 0.95 });
+      const skirt = new THREE.MeshStandardMaterial({ color: 0xec7b17, roughness: 0.96 });
+      const ribbon = new THREE.MeshStandardMaterial({ color: 0xff8918, roughness: 0.92 });
+      const sock = new THREE.MeshStandardMaterial({ color: 0xf7f3ee, roughness: 1 });
+      const shoe = new THREE.MeshStandardMaterial({ color: 0x4c3025, roughness: 0.92 });
+      const sole = new THREE.MeshStandardMaterial({ color: 0x2f1b15, roughness: 1 });
+      const eyeDark = new THREE.MeshStandardMaterial({ color: 0x37251f, roughness: 1 });
+      const eyeGold = new THREE.MeshStandardMaterial({ color: 0xffc21e, roughness: 0.7, emissive: 0x6b3b00, emissiveIntensity: 0.16 });
+      const eyeSpark = new THREE.MeshStandardMaterial({ color: 0xfff7cf, roughness: 0.5, emissive: 0xffee99, emissiveIntensity: 0.26 });
+      const mouthMat = new THREE.MeshStandardMaterial({ color: 0xf48f82, roughness: 0.95 });
       const blush = new THREE.MeshStandardMaterial({
-        color: 0xf5a9a0,
+        color: 0xf7b1ae,
         roughness: 1,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.5,
       });
+      const button = new THREE.MeshStandardMaterial({ color: 0x5d3627, roughness: 1 });
+
+      const body = new THREE.Group();
+      character.add(body);
 
       const torso = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.55, 0.85, 8, 16),
+        new THREE.CapsuleGeometry(0.46, 0.58, 8, 18),
         shirt
       );
-      torso.position.y = 1.28;
+      torso.scale.set(1, 1, 0.9);
+      torso.position.y = 1.34;
       torso.castShadow = true;
-      character.add(torso);
+      body.add(torso);
 
-      const shortsMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.95, 0.52, 0.7),
-        shorts
+      const collarLeft = new THREE.Mesh(
+        new THREE.BoxGeometry(0.22, 0.16, 0.04),
+        shirt
       );
-      shortsMesh.position.set(0, 0.76, 0);
-      shortsMesh.castShadow = true;
-      character.add(shortsMesh);
+      collarLeft.position.set(-0.12, 1.67, 0.35);
+      collarLeft.rotation.z = 0.55;
+      body.add(collarLeft);
+
+      const collarRight = collarLeft.clone();
+      collarRight.position.x = 0.12;
+      collarRight.rotation.z = -0.55;
+      body.add(collarRight);
+
+      const cardiganBody = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.64, 0.72, 8, 18),
+        cardigan
+      );
+      cardiganBody.scale.set(1.06, 1.08, 0.92);
+      cardiganBody.position.set(0, 1.28, -0.02);
+      cardiganBody.castShadow = true;
+      body.add(cardiganBody);
+
+      const cardiganOpening = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 1.15, 0.06),
+        shirt
+      );
+      cardiganOpening.position.set(0, 1.3, 0.42);
+      body.add(cardiganOpening);
+
+      const ribbonCenter = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09, 18, 18),
+        ribbon
+      );
+      ribbonCenter.position.set(0, 1.45, 0.43);
+      ribbonCenter.castShadow = true;
+      body.add(ribbonCenter);
+
+      const ribbonLeft = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.14, 0.08),
+        ribbon
+      );
+      ribbonLeft.position.set(-0.16, 1.46, 0.41);
+      ribbonLeft.rotation.z = 0.55;
+      body.add(ribbonLeft);
+
+      const ribbonRight = ribbonLeft.clone();
+      ribbonRight.position.x = 0.16;
+      ribbonRight.rotation.z = -0.55;
+      body.add(ribbonRight);
+
+      const ribbonTailLeft = new THREE.Mesh(
+        new THREE.BoxGeometry(0.11, 0.34, 0.05),
+        ribbon
+      );
+      ribbonTailLeft.position.set(-0.08, 1.2, 0.39);
+      ribbonTailLeft.rotation.z = 0.2;
+      body.add(ribbonTailLeft);
+
+      const ribbonTailRight = ribbonTailLeft.clone();
+      ribbonTailRight.position.x = 0.08;
+      ribbonTailRight.rotation.z = -0.2;
+      body.add(ribbonTailRight);
+
+      for (const y of [1.52, 1.24, 0.95]) {
+        const cardiganButton = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.05, 0.05, 0.04, 16),
+          button
+        );
+        cardiganButton.rotation.x = Math.PI / 2;
+        cardiganButton.position.set(-0.33, y, 0.46);
+        body.add(cardiganButton);
+      }
+
+      const skirtMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.28, 0.7, 0.6, 24, 1, true),
+        skirt
+      );
+      skirtMesh.position.set(0, 0.84, 0.02);
+      skirtMesh.rotation.y = Math.PI / 24;
+      skirtMesh.castShadow = true;
+      body.add(skirtMesh);
 
       const head = new THREE.Mesh(
-        new THREE.SphereGeometry(0.88, 32, 32),
+        new THREE.SphereGeometry(1.03, 34, 34),
         skin
       );
-      head.scale.set(1, 1.04, 0.98);
-      head.position.y = 2.48;
+      head.scale.set(1, 1.02, 0.96);
+      head.position.y = 2.58;
       head.castShadow = true;
       character.add(head);
 
       const hairCap = new THREE.Mesh(
-        new THREE.SphereGeometry(0.92, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.62),
+        new THREE.SphereGeometry(1.08, 34, 34, 0, Math.PI * 2, 0, Math.PI * 0.68),
         hair
       );
-      hairCap.position.set(0, 2.72, -0.02);
-      hairCap.rotation.x = -0.1;
+      hairCap.position.set(0, 2.88, -0.02);
+      hairCap.rotation.x = -0.12;
       hairCap.castShadow = true;
       character.add(hairCap);
 
-      const fringeLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.39, 24, 24),
+      const backHair = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.78, 0.96, 1.05, 28),
         hair
       );
-      fringeLeft.scale.set(1.2, 0.7, 0.78);
-      fringeLeft.position.set(-0.31, 2.46, 0.58);
-      fringeLeft.rotation.z = 0.42;
-      fringeLeft.castShadow = true;
-      character.add(fringeLeft);
-
-      const fringeRight = fringeLeft.clone();
-      fringeRight.position.x = 0.31;
-      fringeRight.rotation.z = -0.42;
-      character.add(fringeRight);
+      backHair.position.set(0, 2.18, -0.2);
+      backHair.scale.set(1, 1, 0.6);
+      backHair.castShadow = true;
+      character.add(backHair);
 
       const sideHairLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.26, 20, 20),
+        new THREE.SphereGeometry(0.48, 24, 24),
         hair
       );
-      sideHairLeft.scale.set(0.9, 1.2, 0.8);
-      sideHairLeft.position.set(-0.72, 2.34, 0.07);
+      sideHairLeft.scale.set(0.8, 1.3, 0.7);
+      sideHairLeft.position.set(-0.87, 2.35, 0.1);
+      sideHairLeft.rotation.z = 0.2;
       sideHairLeft.castShadow = true;
       character.add(sideHairLeft);
 
       const sideHairRight = sideHairLeft.clone();
-      sideHairRight.position.x = 0.72;
+      sideHairRight.position.x = 0.87;
+      sideHairRight.rotation.z = -0.2;
       character.add(sideHairRight);
 
-      const earLeft = new THREE.Mesh(new THREE.SphereGeometry(0.16, 20, 20), skin);
-      earLeft.position.set(-0.84, 2.37, 0.02);
-      earLeft.castShadow = true;
-      character.add(earLeft);
-
-      const earRight = earLeft.clone();
-      earRight.position.x = 0.84;
-      character.add(earRight);
-
-      const glassesGroup = new THREE.Group();
-      glassesGroup.position.set(0, 2.36, 0.72);
-      character.add(glassesGroup);
-
-      const lensGeometry = new THREE.TorusGeometry(0.22, 0.03, 12, 24);
-      const leftLens = new THREE.Mesh(lensGeometry, glasses);
-      leftLens.position.x = -0.24;
-      glassesGroup.add(leftLens);
-
-      const rightLens = new THREE.Mesh(lensGeometry, glasses);
-      rightLens.position.x = 0.24;
-      glassesGroup.add(rightLens);
-
-      const bridge = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12, 0.03, 0.03),
-        glasses
+      const hairTipLeft = new THREE.Mesh(
+        new THREE.ConeGeometry(0.18, 0.52, 16),
+        hair
       );
-      glassesGroup.add(bridge);
+      hairTipLeft.position.set(-0.92, 1.72, 0.18);
+      hairTipLeft.rotation.z = 0.95;
+      hairTipLeft.castShadow = true;
+      character.add(hairTipLeft);
 
-      const eyeGeometry = new THREE.SphereGeometry(0.06, 16, 16);
-      const eyeLeft = new THREE.Mesh(eyeGeometry, black);
-      eyeLeft.position.set(-0.24, 2.35, 0.81);
-      character.add(eyeLeft);
+      const hairTipRight = hairTipLeft.clone();
+      hairTipRight.position.x = 0.92;
+      hairTipRight.rotation.z = -0.95;
+      character.add(hairTipRight);
 
-      const eyeRight = eyeLeft.clone();
-      eyeRight.position.x = 0.24;
-      character.add(eyeRight);
-
-      const nose = new THREE.Mesh(
-        new THREE.SphereGeometry(0.055, 14, 14),
-        noseMat
+      const fringeCenter = new THREE.Mesh(
+        new THREE.SphereGeometry(0.46, 24, 24),
+        hair
       );
-      nose.scale.set(1, 0.8, 1.1);
-      nose.position.set(0, 2.17, 0.85);
-      character.add(nose);
+      fringeCenter.scale.set(1.25, 0.62, 0.6);
+      fringeCenter.position.set(0, 2.57, 0.7);
+      fringeCenter.castShadow = true;
+      character.add(fringeCenter);
+
+      for (const x of [-0.34, 0, 0.34]) {
+        const bang = new THREE.Mesh(
+          new THREE.ConeGeometry(0.18, 0.48, 14),
+          hair
+        );
+        bang.position.set(x, 2.31, 0.79);
+        bang.rotation.z = x * 0.55;
+        bang.rotation.x = Math.PI;
+        bang.castShadow = true;
+        character.add(bang);
+      }
+
+      const bunBase = new THREE.Mesh(
+        new THREE.SphereGeometry(0.28, 18, 18),
+        hair
+      );
+      bunBase.position.set(-0.78, 3.07, -0.05);
+      bunBase.castShadow = true;
+      character.add(bunBase);
+
+      const bunLoop = new THREE.Mesh(
+        new THREE.TorusGeometry(0.18, 0.05, 10, 20, Math.PI * 1.3),
+        hair
+      );
+      bunLoop.position.set(-1.02, 3.2, 0.05);
+      bunLoop.rotation.z = 0.72;
+      bunLoop.castShadow = true;
+      character.add(bunLoop);
+
+      const hairClipCenter = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 16, 16),
+        new THREE.MeshStandardMaterial({ color: 0xf14b42, roughness: 0.9 })
+      );
+      hairClipCenter.position.set(0.52, 2.83, 0.73);
+      hairClipCenter.castShadow = true;
+      character.add(hairClipCenter);
+
+      const hairClipLeft = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.06, 0.04),
+        new THREE.MeshStandardMaterial({ color: 0xffc03a, roughness: 0.9 })
+      );
+      hairClipLeft.position.set(0.38, 2.82, 0.72);
+      hairClipLeft.rotation.z = -0.35;
+      character.add(hairClipLeft);
+
+      const hairClipRight = hairClipLeft.clone();
+      hairClipRight.position.x = 0.66;
+      hairClipRight.rotation.z = 0.35;
+      character.add(hairClipRight);
+
+      const eyeGroup = new THREE.Group();
+      character.add(eyeGroup);
+
+      function createEye(x) {
+        const eye = new THREE.Group();
+        eye.position.set(x, 2.42, 0.82);
+
+        const eyeBase = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 20, 20),
+          eyeDark
+        );
+        eyeBase.scale.set(1, 1.18, 0.5);
+        eye.add(eyeBase);
+
+        const iris = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.16, 0.16, 0.06, 22),
+          eyeGold
+        );
+        iris.rotation.x = Math.PI / 2;
+        iris.position.z = 0.08;
+        eye.add(iris);
+
+        for (const angle of [0, Math.PI / 2, Math.PI / 4, -Math.PI / 4]) {
+          const sparkle = new THREE.Mesh(
+            new THREE.BoxGeometry(0.04, 0.18, 0.03),
+            eyeSpark
+          );
+          sparkle.position.z = 0.12;
+          sparkle.rotation.z = angle;
+          eye.add(sparkle);
+        }
+
+        const pupil = new THREE.Mesh(
+          new THREE.SphereGeometry(0.055, 14, 14),
+          eyeDark
+        );
+        pupil.scale.set(0.85, 1.1, 0.5);
+        pupil.position.set(0, 0.04, 0.13);
+        eye.add(pupil);
+
+        const highlight = new THREE.Mesh(
+          new THREE.SphereGeometry(0.04, 12, 12),
+          eyeSpark
+        );
+        highlight.position.set(0.06, 0.1, 0.16);
+        eye.add(highlight);
+
+        eyeGroup.add(eye);
+      }
+
+      createEye(-0.34);
+      createEye(0.34);
 
       const blushLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.11, 16, 16),
+        new THREE.SphereGeometry(0.12, 16, 16),
         blush
       );
-      blushLeft.scale.set(1.5, 0.55, 0.35);
-      blushLeft.position.set(-0.45, 2.14, 0.76);
+      blushLeft.scale.set(1.7, 0.62, 0.35);
+      blushLeft.position.set(-0.5, 2.1, 0.8);
       character.add(blushLeft);
 
       const blushRight = blushLeft.clone();
-      blushRight.position.x = 0.45;
+      blushRight.position.x = 0.5;
       character.add(blushRight);
 
       const mouth = new THREE.Mesh(
-        new THREE.TorusGeometry(0.08, 0.015, 8, 16, Math.PI),
-        new THREE.MeshStandardMaterial({ color: 0x8b4f48, roughness: 1 })
+        new THREE.CapsuleGeometry(0.12, 0.2, 6, 12),
+        mouthMat
       );
-      mouth.rotation.z = Math.PI;
-      mouth.position.set(0, 1.99, 0.83);
+      mouth.scale.set(0.9, 1.25, 0.45);
+      mouth.position.set(0, 1.98, 0.87);
+      mouth.rotation.z = -0.06;
       character.add(mouth);
 
-      function createLeg(x) {
+      const mole = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 10, 10),
+        eyeDark
+      );
+      mole.position.set(0.53, 2.14, 0.86);
+      character.add(mole);
+
+      function createLeg(x, forward = 0, tallerSock = false) {
         const leg = new THREE.Group();
 
         const thigh = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.13, 0.12, 0.52, 16),
+          new THREE.CylinderGeometry(0.16, 0.14, 0.74, 18),
           skin
         );
-        thigh.position.y = 0.35;
+        thigh.position.y = 0.48;
         thigh.castShadow = true;
         leg.add(thigh);
 
-        const shoeBase = new THREE.Mesh(
-          new THREE.SphereGeometry(0.22, 20, 20),
-          shoes
+        const sockShape = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.15, tallerSock ? 0.78 : 0.5, 18),
+          sock
         );
-        shoeBase.scale.set(1.25, 0.7, 1.6);
-        shoeBase.position.set(0, 0.02, 0.07);
+        sockShape.position.y = tallerSock ? 0.08 : 0.18;
+        sockShape.rotation.z = tallerSock ? 0.08 : 0;
+        sockShape.castShadow = true;
+        leg.add(sockShape);
+
+        const shoeBase = new THREE.Mesh(
+          new THREE.SphereGeometry(0.24, 20, 20),
+          shoe
+        );
+        shoeBase.scale.set(1.18, 0.76, 1.55);
+        shoeBase.position.set(0, -0.18, 0.16);
         shoeBase.castShadow = true;
         leg.add(shoeBase);
 
         const shoeSole = new THREE.Mesh(
-          new THREE.BoxGeometry(0.44, 0.07, 0.56),
+          new THREE.BoxGeometry(0.46, 0.08, 0.58),
           sole
         );
-        shoeSole.position.set(0, -0.08, 0.08);
+        shoeSole.position.set(0, -0.28, 0.16);
         shoeSole.castShadow = true;
         leg.add(shoeSole);
 
-        leg.position.set(x, 0.12, 0);
+        leg.position.set(x, 0.02, forward);
         return leg;
       }
 
-      character.add(createLeg(-0.24));
-      character.add(createLeg(0.24));
+      const leftLeg = createLeg(-0.23, -0.02, false);
+      leftLeg.rotation.z = 0.05;
+      body.add(leftLeg);
+
+      const rightLeg = createLeg(0.28, 0.28, true);
+      rightLeg.rotation.x = -0.5;
+      rightLeg.rotation.z = -0.16;
+      body.add(rightLeg);
+
+      function createHandPalm() {
+        const palm = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 16, 16),
+          skin
+        );
+        palm.scale.set(1.15, 1.15, 0.55);
+        palm.castShadow = true;
+        return palm;
+      }
+
+      function addFingers(group, spread = 1) {
+        const offsets = [
+          [-0.11 * spread, 0.09, 0.03, -0.5],
+          [-0.04 * spread, 0.16, 0.04, -0.2],
+          [0.03 * spread, 0.17, 0.04, 0.1],
+          [0.1 * spread, 0.11, 0.03, 0.38],
+        ];
+        for (const [x, y, z, rot] of offsets) {
+          const finger = new THREE.Mesh(
+            new THREE.CapsuleGeometry(0.03, 0.11, 4, 10),
+            skin
+          );
+          finger.position.set(x, y, z);
+          finger.rotation.z = rot;
+          finger.castShadow = true;
+          group.add(finger);
+        }
+      }
 
       function createArm(options) {
-        const { side, waving } = options;
+        const { side, waving, forwardTilt = 0 } = options;
         const armPivot = new THREE.Object3D();
-        armPivot.position.set(side * 0.63, 1.63, 0);
+        armPivot.position.set(side * 0.64, 1.58, 0.12);
 
-        const upperArm = new THREE.Mesh(
-          new THREE.CapsuleGeometry(0.12, 0.48, 6, 14),
+        const sleeve = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.16, 0.34, 6, 14),
+          cardigan
+        );
+        sleeve.position.set(0, -0.18, 0);
+        sleeve.castShadow = true;
+        armPivot.add(sleeve);
+
+        const forearm = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.12, 0.34, 6, 12),
           skin
         );
-        upperArm.position.set(0, -0.32, 0);
-        upperArm.castShadow = true;
-        armPivot.add(upperArm);
+        forearm.position.set(0, -0.45, 0.02);
+        forearm.castShadow = true;
+        armPivot.add(forearm);
 
-        const hand = new THREE.Mesh(
-          new THREE.SphereGeometry(0.12, 18, 18),
-          skin
-        );
-        hand.scale.set(1, 0.92, 1);
-        hand.position.set(0, -0.67, 0.03);
-        hand.castShadow = true;
-        armPivot.add(hand);
+        const palm = createHandPalm();
+        palm.position.set(0, -0.7, 0.04);
+        armPivot.add(palm);
+        addFingers(armPivot, side);
 
-        if (!waving) {
-          armPivot.rotation.z = side * 0.12;
+        if (waving) {
+          armPivot.rotation.z = -0.72;
+          armPivot.rotation.x = 0.5;
+          armPivot.rotation.y = -0.18;
         } else {
-          armPivot.rotation.z = -0.6;
-          armPivot.rotation.x = 0.28;
+          armPivot.rotation.z = 0.88;
+          armPivot.rotation.x = forwardTilt;
+          armPivot.rotation.y = 0.18;
         }
 
-        character.add(armPivot);
+        body.add(armPivot);
         return armPivot;
       }
 
-      const leftArmPivot = createArm({ side: -1, waving: false });
+      const leftArmPivot = createArm({ side: -1, waving: false, forwardTilt: -0.18 });
       const rightArmPivot = createArm({ side: 1, waving: true });
 
-      character.rotation.y = 0.18;
+      character.position.y = 0.05;
+      character.rotation.y = 0.1;
 
       const clock = new THREE.Clock();
 
@@ -405,12 +625,14 @@
         const elapsed = clock.getElapsedTime();
         const wave = Math.sin(elapsed * 4.6) * 0.42;
 
-        rightArmPivot.rotation.z = -0.68 + wave;
-        rightArmPivot.rotation.x = 0.22 + Math.cos(elapsed * 4.6) * 0.08;
-        leftArmPivot.rotation.z = -0.14 + Math.sin(elapsed * 1.4) * 0.02;
+        rightArmPivot.rotation.z = -0.7 + wave;
+        rightArmPivot.rotation.x = 0.48 + Math.cos(elapsed * 4.6) * 0.1;
+        rightArmPivot.rotation.y = -0.18 + Math.sin(elapsed * 2.3) * 0.04;
+        leftArmPivot.rotation.z = 0.88 + Math.sin(elapsed * 1.3) * 0.03;
 
-        character.position.y = Math.sin(elapsed * 1.7) * 0.03;
-        character.rotation.y = 0.18 + Math.sin(elapsed * 0.8) * 0.03;
+        body.rotation.z = Math.sin(elapsed * 1.7) * 0.015;
+        character.position.y = 0.05 + Math.sin(elapsed * 1.7) * 0.03;
+        character.rotation.y = 0.1 + Math.sin(elapsed * 0.8) * 0.04;
 
         controls.update();
         renderer.render(scene, camera);
