@@ -104,7 +104,7 @@
         0.1,
         100
       );
-      camera.position.set(0, 3.2, 5.95);
+      camera.position.set(0, 3.3, 6.7);
 
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -121,11 +121,11 @@
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.enablePan = false;
-      controls.minDistance = 4.9;
-      controls.maxDistance = 7.2;
+      controls.minDistance = 5.3;
+      controls.maxDistance = 7.8;
       controls.minPolarAngle = 0.72;
       controls.maxPolarAngle = 1.08;
-      controls.target.set(0, 1.42, 0.14);
+      controls.target.set(0, 1.36, 0.12);
       controls.rotateSpeed = 0.75;
       controls.zoomSpeed = 0.9;
 
@@ -235,13 +235,13 @@
       }
 
       const pedestal = new THREE.Mesh(
-        new THREE.BoxGeometry(0.62, 0.74, 0.58),
+        new THREE.BoxGeometry(0.52, 0.64, 0.5),
         new THREE.MeshStandardMaterial({
           color: 0xdcc9ac,
           roughness: 1,
         })
       );
-      pedestal.position.set(0.72, 0.38, -0.2);
+      pedestal.position.set(0.75, 0.34, -0.22);
       pedestal.castShadow = true;
       pedestal.receiveShadow = true;
       scene.add(pedestal);
@@ -261,26 +261,45 @@
       function createFaceTexture() {
         const canvas = document.createElement("canvas");
         canvas.width = 1024;
-        canvas.height = 512;
+        canvas.height = 768;
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
 
+        ctx.fillStyle = "#3f3437";
+        ctx.beginPath();
+        ctx.moveTo(206, 190);
+        ctx.quadraticCurveTo(250, 72, 408, 102);
+        ctx.quadraticCurveTo(476, 118, 500, 176);
+        ctx.quadraticCurveTo(506, 188, 512, 194);
+        ctx.quadraticCurveTo(518, 188, 524, 176);
+        ctx.quadraticCurveTo(548, 118, 616, 102);
+        ctx.quadraticCurveTo(774, 72, 818, 190);
+        ctx.quadraticCurveTo(790, 238, 720, 246);
+        ctx.quadraticCurveTo(650, 254, 610, 238);
+        ctx.quadraticCurveTo(566, 220, 548, 190);
+        ctx.quadraticCurveTo(530, 168, 512, 150);
+        ctx.quadraticCurveTo(494, 168, 476, 190);
+        ctx.quadraticCurveTo(458, 220, 414, 238);
+        ctx.quadraticCurveTo(374, 254, 304, 246);
+        ctx.quadraticCurveTo(234, 238, 206, 190);
+        ctx.fill();
+
         function drawEye(cx) {
           ctx.fillStyle = "#221914";
           ctx.beginPath();
-          ctx.ellipse(cx, 220, 14, 26, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx, 344, 13, 24, 0, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = "#4b3428";
           ctx.beginPath();
-          ctx.ellipse(cx + 1, 221, 6, 15, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 1, 345, 5, 14, 0, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = "#fff8ec";
           ctx.beginPath();
-          ctx.ellipse(cx + 3, 202, 3.5, 6, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 3, 328, 3.5, 6, 0, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -290,25 +309,25 @@
         ctx.strokeStyle = "#5a4035";
         ctx.lineWidth = 12;
         ctx.beginPath();
-        ctx.moveTo(348, 164);
-        ctx.quadraticCurveTo(392, 152, 430, 164);
+        ctx.moveTo(352, 286);
+        ctx.quadraticCurveTo(392, 274, 428, 286);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(594, 164);
-        ctx.quadraticCurveTo(632, 152, 676, 164);
+        ctx.moveTo(596, 286);
+        ctx.quadraticCurveTo(632, 274, 672, 286);
         ctx.stroke();
 
         ctx.fillStyle = "rgba(233,147,129,0.16)";
         ctx.beginPath();
-        ctx.ellipse(286, 292, 66, 28, -0.08, 0, Math.PI * 2);
+        ctx.ellipse(286, 430, 66, 28, -0.08, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(738, 292, 66, 28, 0.08, 0, Math.PI * 2);
+        ctx.ellipse(738, 430, 66, 28, 0.08, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#f0b883";
         ctx.beginPath();
-        ctx.arc(512, 258, 10, 0, Math.PI * 2);
+        ctx.arc(512, 392, 10, 0, Math.PI * 2);
         ctx.fill();
         return new THREE.CanvasTexture(canvas);
       }
@@ -325,8 +344,8 @@
         new THREE.CapsuleGeometry(0.36, 0.34, 8, 16),
         shirt
       );
-      torso.scale.set(1.03, 0.98, 0.92);
-      torso.position.y = 0.98;
+      torso.scale.set(0.98, 0.92, 0.88);
+      torso.position.y = 0.93;
       torso.castShadow = true;
       body.add(torso);
 
@@ -334,24 +353,24 @@
         new THREE.BoxGeometry(0.66, 0.1, 0.48),
         shirt
       );
-      shirtBottom.position.set(0, 0.68, 0);
+      shirtBottom.position.set(0, 0.66, 0);
       body.add(shirtBottom);
 
       const shortsMesh = new THREE.Mesh(
         new THREE.BoxGeometry(0.68, 0.28, 0.46),
         shorts
       );
-      shortsMesh.position.set(0, 0.52, 0);
+      shortsMesh.position.set(0, 0.48, 0);
       shortsMesh.castShadow = true;
       body.add(shortsMesh);
 
       function createLeg(x, front = false) {
         const leg = new THREE.Group();
         const shin = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.105, 0.095, front ? 0.44 : 0.38, 16),
+          new THREE.CylinderGeometry(0.102, 0.092, front ? 0.39 : 0.35, 16),
           skin
         );
-        shin.position.y = 0.24;
+        shin.position.y = 0.21;
         shin.castShadow = true;
         leg.add(shin);
 
@@ -360,7 +379,7 @@
           shoe
         );
         sneaker.scale.set(front ? 1.3 : 1.18, 0.82, front ? 1.55 : 1.35);
-        sneaker.position.set(0, -0.02, front ? 0.12 : 0.1);
+        sneaker.position.set(0, -0.04, front ? 0.12 : 0.1);
         sneaker.castShadow = true;
         leg.add(sneaker);
 
@@ -371,7 +390,7 @@
         sneakerSole.position.set(0, -0.1, front ? 0.12 : 0.1);
         leg.add(sneakerSole);
 
-        leg.position.set(x, 0.03, front ? 0.12 : 0);
+        leg.position.set(x, 0.02, front ? 0.11 : 0);
         return leg;
       }
 
@@ -386,21 +405,21 @@
         new THREE.SphereGeometry(0.78, 32, 32),
         skin
       );
-      head.scale.set(1.06, 0.94, 0.95);
-      head.position.y = 1.9;
+      head.scale.set(1.08, 0.96, 0.97);
+      head.position.y = 1.82;
       head.castShadow = true;
       character.add(head);
 
       const cheekLeft = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), skin);
       cheekLeft.scale.set(1.2, 0.9, 1);
-      cheekLeft.position.set(-0.5, 1.8, 0.34);
+      cheekLeft.position.set(-0.54, 1.74, 0.36);
       character.add(cheekLeft);
       const cheekRight = cheekLeft.clone();
       cheekRight.position.x = 0.54;
       character.add(cheekRight);
 
       const earLeft = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), skin);
-      earLeft.position.set(-0.76, 1.9, 0.01);
+      earLeft.position.set(-0.75, 1.84, 0.02);
       earLeft.castShadow = true;
       character.add(earLeft);
       const earRight = earLeft.clone();
@@ -408,88 +427,71 @@
       character.add(earRight);
 
       const hairBack = new THREE.Mesh(
-        new THREE.SphereGeometry(0.84, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.64),
+        new THREE.SphereGeometry(0.8, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.64),
         hair
       );
-      hairBack.scale.set(0.94, 0.88, 0.98);
-      hairBack.position.set(0, 2.16, -0.14);
-      hairBack.rotation.x = 0.02;
+      hairBack.scale.set(1.02, 0.92, 0.98);
+      hairBack.position.set(0, 2.04, -0.12);
+      hairBack.rotation.x = -0.04;
       hairBack.castShadow = true;
       character.add(hairBack);
 
       const partLeft = new THREE.Mesh(
-        new THREE.SphereGeometry(0.39, 24, 24),
+        new THREE.SphereGeometry(0.34, 24, 24),
         hair
       );
-      partLeft.scale.set(1.02, 0.92, 0.78);
-      partLeft.position.set(-0.3, 2.1, 0.38);
-      partLeft.rotation.z = -0.14;
+      partLeft.scale.set(0.8, 0.8, 0.72);
+      partLeft.position.set(-0.22, 2.07, 0.18);
+      partLeft.rotation.z = -0.08;
       partLeft.castShadow = true;
       character.add(partLeft);
 
       const partRight = partLeft.clone();
-      partRight.position.x = 0.3;
-      partRight.rotation.z = 0.14;
+      partRight.position.x = 0.22;
+      partRight.rotation.z = 0.08;
       character.add(partRight);
 
       const hairSideLeft = new THREE.Mesh(
         new THREE.CapsuleGeometry(0.17, 0.22, 6, 12),
         hair
       );
-      hairSideLeft.scale.set(0.78, 1.03, 0.64);
-      hairSideLeft.position.set(-0.5, 1.82, 0.22);
-      hairSideLeft.rotation.z = 0.24;
+      hairSideLeft.scale.set(0.68, 0.96, 0.56);
+      hairSideLeft.position.set(-0.48, 1.78, 0.16);
+      hairSideLeft.rotation.z = 0.22;
       hairSideLeft.castShadow = true;
       character.add(hairSideLeft);
 
       const hairSideRight = hairSideLeft.clone();
-      hairSideRight.position.x = 0.5;
-      hairSideRight.rotation.z = -0.24;
+      hairSideRight.position.x = 0.47;
+      hairSideRight.rotation.z = -0.22;
       character.add(hairSideRight);
 
-      for (const [x, rot, scaleX, scaleY] of [
-        [-0.28, -0.2, 1.15, 0.92],
-        [-0.1, -0.06, 1.05, 0.9],
-        [0.1, 0.06, 1.05, 0.9],
-        [0.28, 0.2, 1.15, 0.92],
-      ]) {
-        const bang = new THREE.Mesh(
-          new THREE.SphereGeometry(0.08, 14, 14),
-          hair
-        );
-        bang.scale.set(scaleX * 0.9, scaleY * 0.86, 0.56);
-        bang.position.set(x, 1.98, 0.63);
-        bang.rotation.z = rot;
-        bang.castShadow = true;
-        character.add(bang);
-      }
-
       const facePlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.18, 0.76),
+        new THREE.PlaneGeometry(1.14, 1.0),
         new THREE.MeshBasicMaterial({
           map: faceTexture,
           transparent: true,
         })
       );
-      facePlane.position.set(0, 2.08, 0.81);
+      facePlane.position.set(0, 2.02, 0.82);
       character.add(facePlane);
 
       const glassesGroup = new THREE.Group();
-      glassesGroup.position.set(0, 2.04, 0.82);
+      glassesGroup.position.set(0, 1.95, 0.84);
       character.add(glassesGroup);
 
       const leftLens = new THREE.Mesh(
-        new THREE.TorusGeometry(0.182, 0.028, 12, 24),
+        new THREE.TorusGeometry(0.17, 0.026, 12, 24),
         glasses
       );
-      leftLens.position.x = -0.196;
+      leftLens.position.x = -0.182;
       glassesGroup.add(leftLens);
       const rightLens = leftLens.clone();
-      rightLens.position.x = 0.196;
+      rightLens.position.x = 0.182;
       glassesGroup.add(rightLens);
 
       const bridge = new THREE.Mesh(
-        new THREE.BoxGeometry(0.1, 0.022, 0.03),
+        new THREE.BoxGeometry(0.09, 0.02, 0.03),
         glasses
       );
       glassesGroup.add(bridge);
@@ -499,7 +501,7 @@
         skin
       );
       nose.scale.set(1, 0.8, 1.1);
-      nose.position.set(0, 1.87, 0.78);
+      nose.position.set(0, 1.8, 0.79);
       character.add(nose);
 
       const mouth = new THREE.Mesh(
@@ -507,7 +509,7 @@
         dark
       );
       mouth.rotation.z = Math.PI;
-      mouth.position.set(0, 1.69, 0.78);
+      mouth.position.set(0, 1.62, 0.79);
       character.add(mouth);
 
       function createHand(open = false) {
@@ -542,7 +544,7 @@
 
       function createArm(side, waving = false) {
         const pivot = new THREE.Object3D();
-        pivot.position.set(side * 0.44, 1.16, 0.02);
+        pivot.position.set(side * 0.4, 1.1, 0.02);
 
         const upper = new THREE.Mesh(
           new THREE.CapsuleGeometry(0.09, 0.18, 6, 12),
@@ -580,8 +582,8 @@
       const leftArmPivot = createArm(-1, true);
       const rightArmPivot = createArm(1, false);
 
-      character.scale.setScalar(0.88);
-      character.position.set(0, -0.02, 0.08);
+      character.scale.setScalar(0.79);
+      character.position.set(0, -0.01, 0.06);
       character.rotation.y = 0.03;
 
       const clock = new THREE.Clock();
