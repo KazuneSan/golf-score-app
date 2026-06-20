@@ -104,7 +104,7 @@
         0.1,
         100
       );
-      camera.position.set(0, 3.05, 6.15);
+      camera.position.set(0, 3.2, 5.95);
 
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -125,7 +125,7 @@
       controls.maxDistance = 7.2;
       controls.minPolarAngle = 0.72;
       controls.maxPolarAngle = 1.08;
-      controls.target.set(0, 1.34, 0.14);
+      controls.target.set(0, 1.42, 0.14);
       controls.rotateSpeed = 0.75;
       controls.zoomSpeed = 0.9;
 
@@ -133,7 +133,7 @@
       scene.add(ambientLight);
 
       const keyLight = new THREE.DirectionalLight(0xffefdb, 1.95);
-      keyLight.position.set(3.4, 6.8, 5.1);
+      keyLight.position.set(3.1, 7.2, 4.9);
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.set(1024, 1024);
       keyLight.shadow.camera.near = 1;
@@ -235,13 +235,13 @@
       }
 
       const pedestal = new THREE.Mesh(
-        new THREE.BoxGeometry(0.78, 0.88, 0.74),
+        new THREE.BoxGeometry(0.62, 0.74, 0.58),
         new THREE.MeshStandardMaterial({
           color: 0xdcc9ac,
           roughness: 1,
         })
       );
-      pedestal.position.set(0.72, 0.45, -0.22);
+      pedestal.position.set(0.72, 0.38, -0.2);
       pedestal.castShadow = true;
       pedestal.receiveShadow = true;
       scene.add(pedestal);
@@ -249,7 +249,7 @@
       const character = new THREE.Group();
       scene.add(character);
 
-      const skin = new THREE.MeshStandardMaterial({ color: 0xf7c090, roughness: 0.94 });
+      const skin = new THREE.MeshStandardMaterial({ color: 0xf8c89d, roughness: 0.94 });
       const hair = new THREE.MeshStandardMaterial({ color: 0x3f3437, roughness: 1 });
       const shirt = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92 });
       const shorts = new THREE.MeshStandardMaterial({ color: 0x2d3d64, roughness: 0.95 });
@@ -270,34 +270,45 @@
         function drawEye(cx) {
           ctx.fillStyle = "#221914";
           ctx.beginPath();
-          ctx.ellipse(cx, 245, 21, 35, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx, 220, 14, 26, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = "#3f2b22";
+          ctx.fillStyle = "#4b3428";
           ctx.beginPath();
-          ctx.ellipse(cx + 2, 246, 10, 22, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 1, 221, 6, 15, 0, 0, Math.PI * 2);
           ctx.fill();
 
           ctx.fillStyle = "#fff8ec";
           ctx.beginPath();
-          ctx.ellipse(cx + 5, 223, 5, 8, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + 3, 202, 3.5, 6, 0, 0, Math.PI * 2);
           ctx.fill();
         }
 
         drawEye(396);
         drawEye(628);
 
+        ctx.strokeStyle = "#5a4035";
+        ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.moveTo(348, 164);
+        ctx.quadraticCurveTo(392, 152, 430, 164);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(594, 164);
+        ctx.quadraticCurveTo(632, 152, 676, 164);
+        ctx.stroke();
+
         ctx.fillStyle = "rgba(233,147,129,0.16)";
         ctx.beginPath();
-        ctx.ellipse(284, 318, 70, 30, -0.08, 0, Math.PI * 2);
+        ctx.ellipse(286, 292, 66, 28, -0.08, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(740, 318, 70, 30, 0.08, 0, Math.PI * 2);
+        ctx.ellipse(738, 292, 66, 28, 0.08, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "#f0b883";
         ctx.beginPath();
-        ctx.arc(512, 282, 12, 0, Math.PI * 2);
+        ctx.arc(512, 258, 10, 0, Math.PI * 2);
         ctx.fill();
         return new THREE.CanvasTexture(canvas);
       }
@@ -314,8 +325,8 @@
         new THREE.CapsuleGeometry(0.36, 0.34, 8, 16),
         shirt
       );
-      torso.scale.set(1, 0.98, 0.9);
-      torso.position.y = 0.96;
+      torso.scale.set(1.03, 0.98, 0.92);
+      torso.position.y = 0.98;
       torso.castShadow = true;
       body.add(torso);
 
@@ -330,7 +341,7 @@
         new THREE.BoxGeometry(0.68, 0.28, 0.46),
         shorts
       );
-      shortsMesh.position.set(0, 0.5, 0);
+      shortsMesh.position.set(0, 0.52, 0);
       shortsMesh.castShadow = true;
       body.add(shortsMesh);
 
@@ -364,9 +375,9 @@
         return leg;
       }
 
-      const leftLeg = createLeg(-0.14, false);
+      const leftLeg = createLeg(-0.13, false);
       body.add(leftLeg);
-      const rightLeg = createLeg(0.16, true);
+      const rightLeg = createLeg(0.14, true);
       rightLeg.rotation.x = -0.18;
       rightLeg.rotation.z = -0.04;
       body.add(rightLeg);
@@ -375,21 +386,21 @@
         new THREE.SphereGeometry(0.78, 32, 32),
         skin
       );
-      head.scale.set(1, 1.02, 0.95);
-      head.position.y = 1.88;
+      head.scale.set(1.06, 0.94, 0.95);
+      head.position.y = 1.9;
       head.castShadow = true;
       character.add(head);
 
       const cheekLeft = new THREE.Mesh(new THREE.SphereGeometry(0.17, 16, 16), skin);
       cheekLeft.scale.set(1.2, 0.9, 1);
-      cheekLeft.position.set(-0.52, 1.72, 0.34);
+      cheekLeft.position.set(-0.5, 1.8, 0.34);
       character.add(cheekLeft);
       const cheekRight = cheekLeft.clone();
       cheekRight.position.x = 0.54;
       character.add(cheekRight);
 
       const earLeft = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), skin);
-      earLeft.position.set(-0.72, 1.86, 0.03);
+      earLeft.position.set(-0.76, 1.9, 0.01);
       earLeft.castShadow = true;
       character.add(earLeft);
       const earRight = earLeft.clone();
@@ -400,9 +411,9 @@
         new THREE.SphereGeometry(0.84, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.64),
         hair
       );
-      hairBack.scale.set(0.94, 0.95, 1);
-      hairBack.position.set(0, 2.06, -0.08);
-      hairBack.rotation.x = -0.1;
+      hairBack.scale.set(0.94, 0.88, 0.98);
+      hairBack.position.set(0, 2.16, -0.14);
+      hairBack.rotation.x = 0.02;
       hairBack.castShadow = true;
       character.add(hairBack);
 
@@ -410,44 +421,44 @@
         new THREE.SphereGeometry(0.39, 24, 24),
         hair
       );
-      partLeft.scale.set(1.05, 1, 0.92);
-      partLeft.position.set(-0.22, 2.04, 0.45);
-      partLeft.rotation.z = -0.03;
+      partLeft.scale.set(1.02, 0.92, 0.78);
+      partLeft.position.set(-0.3, 2.1, 0.38);
+      partLeft.rotation.z = -0.14;
       partLeft.castShadow = true;
       character.add(partLeft);
 
       const partRight = partLeft.clone();
-      partRight.position.x = 0.24;
-      partRight.rotation.z = 0.03;
+      partRight.position.x = 0.3;
+      partRight.rotation.z = 0.14;
       character.add(partRight);
 
       const hairSideLeft = new THREE.Mesh(
         new THREE.CapsuleGeometry(0.17, 0.22, 6, 12),
         hair
       );
-      hairSideLeft.scale.set(0.92, 1.16, 0.7);
-      hairSideLeft.position.set(-0.45, 1.88, 0.3);
-      hairSideLeft.rotation.z = 0.2;
+      hairSideLeft.scale.set(0.78, 1.03, 0.64);
+      hairSideLeft.position.set(-0.5, 1.82, 0.22);
+      hairSideLeft.rotation.z = 0.24;
       hairSideLeft.castShadow = true;
       character.add(hairSideLeft);
 
       const hairSideRight = hairSideLeft.clone();
-      hairSideRight.position.x = 0.48;
-      hairSideRight.rotation.z = -0.2;
+      hairSideRight.position.x = 0.5;
+      hairSideRight.rotation.z = -0.24;
       character.add(hairSideRight);
 
-      for (const [x, rot] of [
-        [-0.27, -0.26],
-        [-0.1, -0.1],
-        [0.09, 0.1],
-        [0.26, 0.26],
+      for (const [x, rot, scaleX, scaleY] of [
+        [-0.28, -0.2, 1.15, 0.92],
+        [-0.1, -0.06, 1.05, 0.9],
+        [0.1, 0.06, 1.05, 0.9],
+        [0.28, 0.2, 1.15, 0.92],
       ]) {
         const bang = new THREE.Mesh(
-          new THREE.ConeGeometry(0.08, 0.21, 12),
+          new THREE.SphereGeometry(0.08, 14, 14),
           hair
         );
-        bang.position.set(x, 1.96, 0.69);
-        bang.rotation.x = Math.PI;
+        bang.scale.set(scaleX * 0.9, scaleY * 0.86, 0.56);
+        bang.position.set(x, 1.98, 0.63);
         bang.rotation.z = rot;
         bang.castShadow = true;
         character.add(bang);
@@ -460,25 +471,25 @@
           transparent: true,
         })
       );
-      facePlane.position.set(0, 1.98, 0.81);
+      facePlane.position.set(0, 2.08, 0.81);
       character.add(facePlane);
 
       const glassesGroup = new THREE.Group();
-      glassesGroup.position.set(0, 1.95, 0.82);
+      glassesGroup.position.set(0, 2.04, 0.82);
       character.add(glassesGroup);
 
       const leftLens = new THREE.Mesh(
-        new THREE.TorusGeometry(0.19, 0.03, 12, 24),
+        new THREE.TorusGeometry(0.182, 0.028, 12, 24),
         glasses
       );
-      leftLens.position.x = -0.205;
+      leftLens.position.x = -0.196;
       glassesGroup.add(leftLens);
       const rightLens = leftLens.clone();
-      rightLens.position.x = 0.205;
+      rightLens.position.x = 0.196;
       glassesGroup.add(rightLens);
 
       const bridge = new THREE.Mesh(
-        new THREE.BoxGeometry(0.11, 0.025, 0.03),
+        new THREE.BoxGeometry(0.1, 0.022, 0.03),
         glasses
       );
       glassesGroup.add(bridge);
@@ -488,15 +499,15 @@
         skin
       );
       nose.scale.set(1, 0.8, 1.1);
-      nose.position.set(0, 1.75, 0.78);
+      nose.position.set(0, 1.87, 0.78);
       character.add(nose);
 
       const mouth = new THREE.Mesh(
-        new THREE.TorusGeometry(0.038, 0.008, 8, 16, Math.PI),
+        new THREE.TorusGeometry(0.026, 0.006, 8, 16, Math.PI),
         dark
       );
       mouth.rotation.z = Math.PI;
-      mouth.position.set(0, 1.56, 0.78);
+      mouth.position.set(0, 1.69, 0.78);
       character.add(mouth);
 
       function createHand(open = false) {
