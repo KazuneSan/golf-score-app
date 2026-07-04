@@ -32,25 +32,55 @@ export const PERSONA_PROFILES = {
   },
 };
 
-// Focus metric → challenge key (for Home FOCUS cells → DrillList navigation)
-export const METRIC_TO_CHALLENGE = {
-  boggyOn:   'second',
-  parOn:     'second',
-  fairway:   'tee-dir',
-  upDown:    'approach',
-  threePutt: 'putt',
-  ob:        'tee-dir',
+// Focus metric → challenge key, per persona level.
+// キーは必ず challenges.js の ALL_CHALLENGES に実在するものを使うこと
+// (存在しないキーだと DrillList が空になる。v0.1.0 で実際に起きたバグ)。
+const METRIC_TO_CHALLENGE_BY_LEVEL = {
+  '100切り': {
+    boggyOn:   'mgmt-bogey-on-100',
+    parOn:     'iron-100yd',
+    fairway:   'ob-tee',
+    upDown:    'zakuri-100',
+    threePutt: 'putt-3putt-100',
+    ob:        'ob-tee',
+  },
+  '90切り': {
+    boggyOn:   'mgmt-bogey-on-90',
+    parOn:     'iron-130yd',
+    fairway:   'ob-tee-90',
+    upDown:    'approach-chip-90',
+    threePutt: 'putt-long-90',
+    ob:        'ob-tee-90',
+  },
+  '80切り': {
+    boggyOn:   'mgmt-bogey-on-80',
+    parOn:     'iron-140yd',
+    fairway:   'mgmt-dispersion-80',
+    upDown:    'approach-chip-80',
+    threePutt: 'putt-15m-80',
+    ob:        'mgmt-dispersion-80',
+  },
 };
 
-// Focus label → challenge key (for Home "注力課題のテスト結果")
-export const FOCUS_LABEL_TO_CHALLENGE = {
-  'ボギーオン率': 'second',
-  'パーオン率': 'second',
-  'FWキープ率': 'tee-dir',
-  '寄せワン率': 'approach',
-  '3パット率': 'putt',
-  'OB率': 'tee-dir',
+const FOCUS_LABEL_TO_METRIC = {
+  'ボギーオン率': 'boggyOn',
+  'パーオン率':   'parOn',
+  'FWキープ率':   'fairway',
+  '寄せワン率':   'upDown',
+  '3パット率':    'threePutt',
+  'OB率':         'ob',
 };
+
+export function metricToChallenge(metricKey, personaKey = '100切り') {
+  const table = METRIC_TO_CHALLENGE_BY_LEVEL[personaKey]
+    || METRIC_TO_CHALLENGE_BY_LEVEL['100切り'];
+  return table[metricKey] || null;
+}
+
+export function focusToChallenge(focusLabel, personaKey = '100切り') {
+  const metricKey = FOCUS_LABEL_TO_METRIC[focusLabel];
+  return metricKey ? metricToChallenge(metricKey, personaKey) : null;
+}
 
 export async function getPersona() {
   try {

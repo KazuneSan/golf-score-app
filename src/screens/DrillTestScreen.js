@@ -27,7 +27,7 @@ const TEST_CONFIG = {
 export default function DrillTestScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { challengeKey = 'putt', drillId, mode = 'test' } = route.params || {};
+  const { challengeKey = 'putt-1m-100', drillId, mode = 'test' } = route.params || {};
 
   const challenge = getChallenge(challengeKey);
   const drill = drillId ? getDrillDetail(drillId) : null;

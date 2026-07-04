@@ -5,7 +5,7 @@ import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { THEMES, FONT } from '../theme/tokens';
 import { getLatestRound, getAllRounds } from '../data/rounds';
-import { getPersona, PERSONA_PROFILES, METRIC_TO_CHALLENGE, FOCUS_LABEL_TO_CHALLENGE } from '../data/persona';
+import { getPersona, PERSONA_PROFILES, metricToChallenge, focusToChallenge } from '../data/persona';
 import { getBestTestResult } from '../data/testResults';
 import { getDrillsForChallenge } from '../data/drillDetails';
 import { pickTip } from '../data/tips';
@@ -118,7 +118,7 @@ export default function HomeScreen() {
         const personaKey = p?.personaKey || '100切り';
         const profile = PERSONA_PROFILES[personaKey] || PERSONA_PROFILES['100切り'];
         const primaryFocus = profile.focus[0];
-        const primaryCh = FOCUS_LABEL_TO_CHALLENGE[primaryFocus] || 'putt';
+        const primaryCh = focusToChallenge(primaryFocus, personaKey) || 'putt-1m-100';
         const best = await getBestTestResult(primaryCh);
         if (active) setTestResult(best);
       })();
@@ -137,15 +137,16 @@ export default function HomeScreen() {
   };
 
   const goToMetricChallenge = (metricKey) => {
-    const ch = METRIC_TO_CHALLENGE[metricKey];
+    const pk = persona?.personaKey || '100切り';
+    const ch = metricToChallenge(metricKey, pk);
     if (!ch) return onNavigate('practice');
     navigation.navigate('DrillList', { challengeKey: ch });
   };
 
   const goToFocusTest = () => {
-    const personaKey = persona?.personaKey || '100切り';
-    const profile = PERSONA_PROFILES[personaKey] || PERSONA_PROFILES['100切り'];
-    const primaryCh = FOCUS_LABEL_TO_CHALLENGE[profile.focus[0]] || 'putt';
+    const pk = persona?.personaKey || '100切り';
+    const profile = PERSONA_PROFILES[pk] || PERSONA_PROFILES['100切り'];
+    const primaryCh = focusToChallenge(profile.focus[0], pk) || 'putt-1m-100';
     navigation.navigate('DrillList', { challengeKey: primaryCh });
   };
 
@@ -309,7 +310,6 @@ export default function HomeScreen() {
   const lrCourse = latestRound?.course?.name;
 
   // Test result for Home card
-  const primaryChKey = FOCUS_LABEL_TO_CHALLENGE[primaryFocus] || 'putt';
   const targetPct = 60; // default test target; could vary by drill
 
   return (
