@@ -27,21 +27,17 @@ const THEMES_BY_SLIDE = {
   close:   { bg: ['#0E0E14', '#222230'], accent: '#D4B254' },
 };
 
-// Map focus metric to a recommended drill (simple heuristic)
+// Map focus metric to a recommended drill.
+// 分岐は focusMetric の選定 (boggyOn < 60 → 3putts > 1 → 達成) と揃えること。
+// キーは challenges.js に実在するものだけ (存在しないキーだとドリルスライドごと消える)。
 function pickRecommendedDrill(stats) {
-  if (stats.boggyOnPct < 60) {
-    const drills = getDrillsForChallenge('second');
-    const d = drills[0];
-    return d ? { id: d.id, challengeKey: 'second', detail: getDrillDetail(d.id) } : null;
-  }
-  if (stats.threePutts > 0) {
-    const drills = getDrillsForChallenge('putt');
-    const d = drills[0];
-    return d ? { id: d.id, challengeKey: 'putt', detail: getDrillDetail(d.id) } : null;
-  }
-  const drills = getDrillsForChallenge('approach');
-  const d = drills[0];
-  return d ? { id: d.id, challengeKey: 'approach', detail: getDrillDetail(d.id) } : null;
+  const pick = (challengeKey) => {
+    const d = getDrillsForChallenge(challengeKey)[0];
+    return d ? { id: d.id, challengeKey, detail: getDrillDetail(d.id) } : null;
+  };
+  if (stats.boggyOnPct < 60) return pick('iron-100yd');     // ボギーオン率 → 100yd を確実に乗せる
+  if (stats.threePutts > 1)  return pick('putt-3putt-100'); // 3パット → 10m タッチ
+  return pick('zakuri-100');                                 // 維持フェーズ → グリーン周り精度
 }
 
 export default function RoundCompleteScreen() {
@@ -217,7 +213,8 @@ export default function RoundCompleteScreen() {
               <DrillSlide theme={currentTheme} drill={recDrill.detail} drillId={recDrill.id} onOpen={openDrill} />
             )}
             {currentSlide.key === 'close' && (
-              <CloseSlide theme={currentTheme} total={total} diff={diff} reached={reached} onHome={goHome} />
+              <CloseSlide theme={currentTheme} total={total} diff={diff} reached={reached} onHome={goHome}
+                drillName={recDrill?.detail?.name} onOpenDrill={recDrill ? openDrill : null} />
             )}
           </Animated.View>
         </Pressable>
@@ -557,7 +554,7 @@ function DrillSlide({ theme, drill, drillId, onOpen }) {
 }
 
 // ───────── Close ─────────
-function CloseSlide({ theme, total, diff, reached, onHome }) {
+function CloseSlide({ theme, total, diff, reached, onHome, drillName, onOpenDrill }) {
   const fade = useRef(new Animated.Value(0)).current;
   const scoreFade = useRef(new Animated.Value(0)).current;
   const btnFade = useRef(new Animated.Value(0)).current;
@@ -589,6 +586,13 @@ function CloseSlide({ theme, total, diff, reached, onHome }) {
       </Animated.View>
 
       <Animated.View style={{ opacity: btnFade }}>
+        {onOpenDrill && (
+          <Pressable onPress={onOpenDrill} style={[styles.drillCTABtn, { borderColor: theme.accent }]}>
+            <Text style={[styles.drillCTAText, { color: theme.accent }]}>
+              次の練習: {drillName}  →
+            </Text>
+          </Pressable>
+        )}
         <Pressable onPress={onHome} style={[styles.homeBtn, { backgroundColor: INK }]}>
           <Text style={styles.homeText}>ホームに戻る</Text>
         </Pressable>
@@ -765,6 +769,8 @@ const styles = StyleSheet.create({
   closeTodayLabel: { fontFamily: FONT.mono, fontSize: 11, letterSpacing: 1.2, fontWeight: '600', textTransform: 'uppercase' },
   closeTotal: { fontFamily: FONT.mono, fontSize: 72, fontWeight: '300', color: INK, letterSpacing: -3, lineHeight: 78, includeFontPadding: false },
   closeDiff: { fontFamily: FONT.mono, fontSize: 22, fontWeight: '500' },
+  drillCTABtn: { paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, marginBottom: 10 },
+  drillCTAText: { fontSize: 14, fontWeight: '700', letterSpacing: -0.2 },
   homeBtn: { paddingVertical: 16, borderRadius: 10, alignItems: 'center' },
   homeText: { color: '#0D0D14', fontSize: 15, fontWeight: '700', letterSpacing: -0.2 },
   closeFoot: { fontFamily: FONT.mono, fontSize: 10, marginTop: 14, textAlign: 'center', lineHeight: 16, letterSpacing: 0.4 },

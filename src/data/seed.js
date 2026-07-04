@@ -93,9 +93,9 @@ export async function seedMockData() {
 
   // ── 3 practice rounds spread over ~1 month
   const practiceConfigs = [
-    { daysAgo: 28, skillOffset: 0.8, challenges: ['putt', 'second'] },
-    { daysAgo: 18, skillOffset: 0.6, challenges: ['tee-dir', 'approach'] },
-    { daysAgo: 8,  skillOffset: 0.4, challenges: ['second'] },
+    { daysAgo: 28, skillOffset: 0.8, challenges: ['putt-1m-100', 'mgmt-bogey-on-100'] },
+    { daysAgo: 18, skillOffset: 0.6, challenges: ['ob-tee', 'zakuri-100'] },
+    { daysAgo: 8,  skillOffset: 0.4, challenges: ['mgmt-bogey-on-100'] },
   ];
   for (const cfg of practiceConfigs) {
     const r = generateMockRound({
@@ -105,25 +105,25 @@ export async function seedMockData() {
     await saveRound(r);
   }
 
-  // ── Drill test results (goal tests)
+  // ── Drill test results (goal tests) — challengeKey は challenges.js の実キーを使うこと
   const testResults = [
-    { challengeKey: 'second', attempts: 6, successes: 3, pct: 50, passed: true, stars: 2, ts: Date.now() - 3 * DAY },
-    { challengeKey: 'second', attempts: 6, successes: 4, pct: 67, passed: true, stars: 3, ts: Date.now() - 1 * DAY },
-    { challengeKey: 'putt',   attempts: 10, successes: 6, pct: 60, passed: true, stars: 3, ts: Date.now() - 5 * DAY },
-    { challengeKey: 'approach', attempts: 8, successes: 3, pct: 38, passed: false, stars: 1, ts: Date.now() - 10 * DAY },
+    { challengeKey: 'mgmt-bogey-on-100', attempts: 3, successes: 2, pct: 67, passed: true, stars: 2, target: 67, ts: Date.now() - 3 * DAY },
+    { challengeKey: 'mgmt-bogey-on-100', attempts: 3, successes: 2, pct: 67, passed: true, stars: 2, target: 67, ts: Date.now() - 1 * DAY },
+    { challengeKey: 'putt-1m-100',   attempts: 10, successes: 6, pct: 60, passed: true, stars: 2, target: 60, ts: Date.now() - 5 * DAY },
+    { challengeKey: 'zakuri-100', attempts: 10, successes: 4, pct: 40, passed: false, stars: 1, target: 60, ts: Date.now() - 10 * DAY },
   ];
   for (const r of testResults) await saveTestResult(r, false);
 
   // ── Drill sessions
   const drillSessions = [
-    { challengeKey: 'putt', drillId: 'p1', attempts: 6, successes: 5, pct: 83, passed: true, stars: 3, ts: Date.now() - 2 * DAY },
-    { challengeKey: 'second', drillId: 's1', attempts: 6, successes: 4, pct: 67, passed: true, stars: 2, ts: Date.now() - 4 * DAY },
+    { challengeKey: 'putt-1m-100', drillId: 'p1', attempts: 5, successes: 5, pct: 100, passed: true, stars: 3, target: 100, ts: Date.now() - 2 * DAY },
+    { challengeKey: 'putt-3putt-100', drillId: 'pp100', attempts: 10, successes: 8, pct: 80, passed: true, stars: 2, target: 80, ts: Date.now() - 4 * DAY },
   ];
   for (const r of drillSessions) await saveTestResult(r, true);
 
   // ── Favorite a couple drills
-  await toggleFavorite('p1');   // ゲートドリル
-  await toggleFavorite('s1');   // メトロノーム
+  await toggleFavorite('p1');     // ゲートドリル
+  await toggleFavorite('pp100');  // 10m タッチドリル
 
   return {
     rounds: roundConfigs.length,
