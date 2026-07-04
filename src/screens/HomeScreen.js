@@ -309,8 +309,8 @@ export default function HomeScreen() {
   const lrDate = latestRound ? new Date(latestRound.endedAt).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }) : null;
   const lrCourse = latestRound?.course?.name;
 
-  // Test result for Home card
-  const targetPct = 60; // default test target; could vary by drill
+  // Test result for Home card — 実際に受けたテストの合格ラインを優先
+  const targetPct = testResult?.target ?? 60;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>

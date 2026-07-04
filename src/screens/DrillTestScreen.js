@@ -10,19 +10,50 @@ import { saveTestResult } from '../data/testResults';
 
 const theme = THEMES.light;
 
-// Per-challenge test configuration
-const TEST_CONFIG = {
-  putt:        { attempts: 10, action: '3m パット',         verb: 'カップイン',        target: 50, targetLabel: '50% 以上' },
-  'short-putt':{ attempts: 10, action: '1m パット',         verb: 'カップイン',        target: 90, targetLabel: '90% 以上' },
-  second:      { attempts: 6,  action: '140-170Y セカンド', verb: 'グリーンオン',      target: 40, targetLabel: '40% 以上' },
-  'tee-dir':   { attempts: 6,  action: 'ティーショット',    verb: 'フェアウェイキープ', target: 55, targetLabel: '55% 以上' },
-  'tee-dist':  { attempts: 6,  action: 'ティーショット',    verb: '目標飛距離達成',    target: 50, targetLabel: '50% 以上' },
-  approach:    { attempts: 8,  action: '30Y アプローチ',    verb: '寄せワン圏内',      target: 60, targetLabel: '60% 以上' },
-  bunker:      { attempts: 6,  action: 'バンカー',         verb: '1発脱出',           target: 60, targetLabel: '60% 以上' },
-  'iron-100':  { attempts: 6,  action: '100Y ショット',    verb: 'グリーンオン',      target: 50, targetLabel: '50% 以上' },
-  chip:        { attempts: 8,  action: 'チップ',           verb: '寄せワン圏内',      target: 65, targetLabel: '65% 以上' },
-  'course-mgmt': { attempts: 18, action: 'ボギーオン',     verb: 'ボギーオン達成',    target: 60, targetLabel: '60% 以上' },
+// ─ テスト設定の導出 ─────────────────────────────────────────────
+// ドリルテストは drillDetails.js の pass 定義を唯一の真実として使う。
+// (旧 TEST_CONFIG は challenges.js に存在しないキーで引いていて、
+//  全ドリルが「3mパット/50%」にフォールバックするバグがあった)
+
+// 課題単体の GOAL TEST (ドリル未指定) はカテゴリごとの標準テスト。
+// mgmt/mental はレンジで測れないため「直近3Rで基準を満たせたか」の自己チェック。
+const CATEGORY_TEST = {
+  tee:      { attempts: 10, action: 'ティーショット',   verb: '狙ったゾーンに着弾',       target: 70 },
+  iron:     { attempts: 10, action: 'ショット',         verb: 'グリーン相当エリアにオン', target: 60 },
+  approach: { attempts: 10, action: 'アプローチ',       verb: '狙いの距離に寄せる',       target: 60 },
+  bunker:   { attempts: 10, action: 'バンカーショット', verb: '1打で脱出',                target: 70 },
+  putt:     { attempts: 10, action: 'パット',           verb: 'カップイン',               target: 60 },
+  mgmt:     { attempts: 3,  action: '直近3ラウンド',    verb: '基準を満たせた',           target: 67 },
+  mental:   { attempts: 3,  action: '直近3ラウンド',    verb: '基準を満たせた',           target: 67 },
 };
+
+// drill.pass.text から ○×テスト条件をパースする。
+// パターン外(読了・入力系ドリル)は「完了チェック」1回のテストになる。
+function deriveDrillTest(drill) {
+  const t = drill?.pass?.text || '';
+  let m = t.match(/(\d+)球中\s*(\d+)球/) || t.match(/(\d+)箇所中\s*(\d+)箇所/);
+  if (m) {
+    const attempts = parseInt(m[1], 10);
+    const need = parseInt(m[2], 10);
+    return { kind: 'count', attempts, target: Math.round((need / attempts) * 100), passText: t };
+  }
+  m = t.match(/(\d+)球連続/) || t.match(/(\d+)球でミス\s*0/);
+  if (m) {
+    const attempts = parseInt(m[1], 10);
+    return { kind: 'count', attempts, target: 100, passText: t };
+  }
+  return { kind: 'done', attempts: 1, target: 100, passText: t || '完了 = 合格' };
+}
+
+// 星の基準:
+//  count型ドリル: 全球成功=★★★ / 合格=★★ / 未達=★ (pass.sub の「10/10で⭐⭐⭐」に一致)
+//  done型ドリル:  完了=★★★ / 未完了=★
+//  GOAL TEST:     目標+10%=★★★ / 合格=★★ / 未達=★
+function calcStars(mode, pct, passed, target) {
+  if (mode === 'done')    return passed ? 3 : 1;
+  if (mode === 'perfect') return pct === 100 ? 3 : passed ? 2 : 1;
+  return pct >= target + 10 ? 3 : passed ? 2 : 1;
+}
 
 export default function DrillTestScreen() {
   const navigation = useNavigation();
@@ -31,14 +62,43 @@ export default function DrillTestScreen() {
 
   const challenge = getChallenge(challengeKey);
   const drill = drillId ? getDrillDetail(drillId) : null;
-  const cfg = TEST_CONFIG[challengeKey] || TEST_CONFIG.putt;
-
   const isDrillMode = mode === 'drill' && drill;
-  const attempts = isDrillMode ? 6 : cfg.attempts;
+
+  // ドリルモード: pass 定義から導出 / GOAL TEST: 課題カテゴリの標準テスト
+  const cfg = (() => {
+    if (isDrillMode) {
+      const dt = deriveDrillTest(drill);
+      return {
+        attempts: dt.attempts,
+        target: dt.target,
+        targetLabel: dt.kind === 'done' ? '完了 = 合格' : `${dt.target}% 以上`,
+        action: drill.name,
+        judge: dt.passText,
+        question: dt.kind === 'done' ? '完了した？' : '成功した？',
+        okLabel: dt.kind === 'done' ? '完了' : '成功',
+        ngLabel: dt.kind === 'done' ? 'まだ' : '失敗',
+        starsMode: dt.kind === 'done' ? 'done' : 'perfect',
+        unit: dt.kind === 'done' ? '回' : '球',
+      };
+    }
+    const c = CATEGORY_TEST[challenge?.category] || CATEGORY_TEST.putt;
+    return {
+      ...c,
+      targetLabel: `${c.target}% 以上`,
+      judge: c.verb,
+      question: `${c.verb}できた？`,
+      okLabel: '成功',
+      ngLabel: '失敗',
+      starsMode: 'margin',
+      unit: challenge?.category === 'mgmt' || challenge?.category === 'mental' ? 'R' : '球',
+    };
+  })();
+
+  const attempts = cfg.attempts;
   const title = isDrillMode ? drill.name : (challenge?.metric || '課題テスト');
   const subtitle = isDrillMode
     ? drill.purpose?.slice(0, 80) + (drill.purpose?.length > 80 ? '…' : '')
-    : `${cfg.action} × ${attempts}球`;
+    : `${cfg.action} × ${attempts}${cfg.unit}`;
   const kicker = isDrillMode ? 'DRILL' : 'GOAL TEST';
 
   const [phase, setPhase] = useState('intro');
@@ -61,10 +121,11 @@ export default function DrillTestScreen() {
       const succ = next.filter(Boolean).length;
       const pct = Math.round((succ / attempts) * 100);
       const passed = pct >= cfg.target;
-      const stars = pct >= cfg.target + 10 ? 3 : passed ? 2 : 1;
+      const stars = calcStars(cfg.starsMode, pct, passed, cfg.target);
       const entry = {
         challengeKey, ts: Date.now(),
         attempts, successes: succ, pct, passed, stars,
+        target: cfg.target,
         ...(isDrillMode ? { drillId } : {}),
       };
       // Fire-and-forget persist
@@ -93,21 +154,36 @@ export default function DrillTestScreen() {
 
           <View style={styles.card}>
             <Text style={styles.cardLabel}>テスト条件</Text>
-            <Row k="試技回数" v={`${attempts} 球`} />
+            <Row k="試技回数" v={`${attempts} ${cfg.unit}`} />
             <Row k="合格ライン" v={cfg.targetLabel} />
             <Row k="アクション" v={cfg.action} />
-            <Row k="成功判定" v={cfg.verb} />
+            <Row k="成功判定" v={cfg.judge} />
           </View>
 
           <View style={styles.card}>
             <Text style={styles.cardLabel}>スター判定</Text>
-            <Row k="★★★" v={`${cfg.target + 10}% 以上`} />
-            <Row k="★★" v={`${cfg.target}% 以上（合格）`} />
-            <Row k="★" v={`${cfg.target}% 未満`} />
+            {cfg.starsMode === 'done' ? (
+              <>
+                <Row k="★★★" v="完了" />
+                <Row k="★" v="未完了" />
+              </>
+            ) : cfg.starsMode === 'perfect' ? (
+              <>
+                <Row k="★★★" v={`全${cfg.unit}成功`} />
+                <Row k="★★" v={`${cfg.target}% 以上（合格）`} />
+                <Row k="★" v={`${cfg.target}% 未満`} />
+              </>
+            ) : (
+              <>
+                <Row k="★★★" v={`${Math.min(100, cfg.target + 10)}% 以上`} />
+                <Row k="★★" v={`${cfg.target}% 以上（合格）`} />
+                <Row k="★" v={`${cfg.target}% 未満`} />
+              </>
+            )}
           </View>
 
           <Text style={styles.introNote}>
-            1球ごとに「できた（○）/できなかった（×）」をタップして記録します。
+            1{cfg.unit}ごとに「できた（○）/できなかった（×）」をタップして記録します。
           </Text>
 
           <Pressable onPress={start} style={styles.startBtn}>
@@ -165,7 +241,7 @@ export default function DrillTestScreen() {
             </View>
             <View>
               <Text style={styles.liveLabel}>残り</Text>
-              <Text style={styles.liveValue}>{attemptsLeft}<Text style={styles.liveUnit}> 球</Text></Text>
+              <Text style={styles.liveValue}>{attemptsLeft}<Text style={styles.liveUnit}> {cfg.unit}</Text></Text>
             </View>
           </View>
 
@@ -173,18 +249,18 @@ export default function DrillTestScreen() {
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={styles.attemptTag}>Attempt</Text>
             <Text style={styles.attemptNum}>{currentAttempt}</Text>
-            <Text style={styles.attemptQ}>{cfg.verb}できた？</Text>
+            <Text style={styles.attemptQ}>{cfg.question}</Text>
           </View>
 
           {/* Buttons */}
           <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
             <Pressable onPress={() => recordAttempt(false)} style={[styles.resultBtn, { borderColor: theme.warn, backgroundColor: theme.warn + '10' }]}>
               <Text style={[styles.resultBtnSym, { color: theme.warn }]}>×</Text>
-              <Text style={[styles.resultBtnLabel, { color: theme.warn }]}>失敗</Text>
+              <Text style={[styles.resultBtnLabel, { color: theme.warn }]}>{cfg.ngLabel}</Text>
             </Pressable>
             <Pressable onPress={() => recordAttempt(true)} style={[styles.resultBtn, { borderColor: theme.good, backgroundColor: theme.good + '10' }]}>
               <Text style={[styles.resultBtnSym, { color: theme.good }]}>○</Text>
-              <Text style={[styles.resultBtnLabel, { color: theme.good }]}>成功</Text>
+              <Text style={[styles.resultBtnLabel, { color: theme.good }]}>{cfg.okLabel}</Text>
             </Pressable>
           </View>
           <Pressable onPress={undoLast} disabled={records.length === 0} style={[styles.undoBtn, records.length === 0 && { opacity: 0.3 }]}>
