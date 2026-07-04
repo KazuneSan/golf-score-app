@@ -1,5 +1,22 @@
 # Project Notes for Claude
 
+## Git 運用ルール
+
+- リモート: https://github.com/KazuneSan/golf-score-app (master ブランチ)
+- **意味のある単位ごとにコミットする**(画面1つ、バグ修正1件など)。まとめて巨大コミットにしない
+- 破壊的な変更・大規模リファクタの前には必ずコミットしておく(ロールバック可能に)
+- リリース節目には `git tag` を打つ(例: v0.1.0-baseline)
+- `.scrape-cache/` はコミット禁止(271MB、.gitignore 済み)
+
+## データのキー規約(重要・バグ再発防止)
+
+challenges.js の課題キー(`ob-tee`, `putt-1m-100` 等)が唯一の真実。
+`'second'` `'tee-dir'` `'putt'` などの旧キーは v0.1.0 で全廃済み。
+**challengeKey を参照するコードを書くときは、必ず ALL_CHALLENGES に実在するキーか確認すること**
+(存在しないキーでも silent に空配列が返るだけでクラッシュしないため、発見が遅れる)。
+ドリルテストの合格条件は drillDetails.js の `pass.text` から DrillTestScreen が自動導出する
+(球数・合格%をパース)。新ドリル追加時は pass.text を「10球中 8球…」「5球連続…」の書式にする。
+
 ## ドリル・アニメーション制作の重要ルール
 
 新しいドリル・アニメーション(straight, over, eyesclosed, metronome, onehand 等)を作るときは、**実装に着手する前に必ず**以下の順で読むこと:
