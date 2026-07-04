@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "fairway-native",
-    "slug": "fairway-native",
+    "name": "morupi",
+    "slug": "morupi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

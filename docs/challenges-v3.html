@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>目標スコア別 課題リスト v3 (症状→原因→基準)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", sans-serif;
+    background: #faf6ec;
+    color: #1a1714;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    line-height: 1.55;
+  }
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.5px; }
+  .subtitle { font-size: 14px; color: #6b6b66; margin: 0 0 24px; }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 22px;
+    margin: 0 0 6px;
+    padding-left: 14px;
+    border-left: 6px solid #1a1714;
+    line-height: 1.3;
+  }
+  .target-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: #1a1714;
+    color: #faf6ec;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .target-desc { font-size: 13px; color: #6b6b66; margin: 0 0 20px 20px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  th {
+    background: #f0ebdb;
+    text-align: left;
+    padding: 10px 10px;
+    font-weight: 700;
+    font-size: 12px;
+    color: #1a1714;
+    border-bottom: 2px solid #d5cfb8;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 10px 10px;
+    vertical-align: top;
+    border-bottom: 1px solid #ece6d2;
+  }
+  tr:hover { background: #fcfaf2; }
+
+  /* Symptom column — grouped via rowspan, with thick left border */
+  .symptom {
+    font-weight: 700;
+    background: #fbf7e6;
+    border-left: 4px solid #1a1714;
+    font-size: 13.5px;
+    color: #1a1714;
+  }
+  .symptom .sym-cat { display: block; margin-bottom: 4px; }
+
+  /* Category pills */
+  .cat {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  .cat-tee   { background: #fde4d4; color: #8a3300; }
+  .cat-iron  { background: #d6e8f8; color: #114068; }
+  .cat-app   { background: #e6dcfb; color: #4a2580; }
+  .cat-bunk  { background: #f5e7c4; color: #6b4d00; }
+  .cat-putt  { background: #d4ecd5; color: #1e5b22; }
+  .cat-mgmt  { background: #f0e0e0; color: #7a2222; }
+  .cat-mental{ background: #e8e0d4; color: #5a4520; }
+
+  /* Cause type pills */
+  .type {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .type-skill  { background: #cce4f4; color: #1a4068; }
+  .type-mgmt   { background: #fbdcdc; color: #7a2222; }
+  .type-know   { background: #fbe9c4; color: #6b4d00; }
+  .type-gear   { background: #e0e0e0; color: #404040; }
+  .type-mental { background: #e8e0d4; color: #5a4520; }
+
+  /* Location pills */
+  .loc {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    margin: 1px 0;
+    border: 1px solid;
+  }
+  .loc-range   { background: #fef9e7; color: #6b4d00; border-color: #e8d590; }
+  .loc-app     { background: #f0e7fc; color: #4a2580; border-color: #c8b0e8; }
+  .loc-bunk    { background: #fbe5b8; color: #6b4d00; border-color: #d8b870; }
+  .loc-green   { background: #d4ecd5; color: #1e5b22; border-color: #8cc88e; }
+  .loc-home    { background: #e8f0ff; color: #1a4080; border-color: #a8c5f0; }
+  .loc-sponge  { background: #fce0ec; color: #80244a; border-color: #e8a0c0; }
+  .loc-desk    { background: #e8e0d4; color: #5a4520; border-color: #c0b0a0; }
+  .loc-sim     { background: #ddf2f0; color: #1a5a55; border-color: #88c8c0; }
+  .loc-course  { background: #fbd9d4; color: #7a2222; border-color: #e09080; }
+
+  .cause { font-weight: 600; color: #1a1714; }
+  .crit { color: #1a1714; font-size: 12.5px; }
+  .round-crit {
+    color: #2a4a6a;
+    font-size: 12px;
+    background: #f4f8ff;
+    border-left: 2px solid #a8c5f0;
+    padding-left: 9px !important;
+  }
+  .why  { color: #6b6b66; font-size: 12px; }
+  .legend {
+    background: #fff;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    margin-bottom: 28px;
+    border: 1px solid #ece6d2;
+  }
+  .legend strong { color: #1a1714; display: block; margin-bottom: 6px; }
+  .legend .row { margin-bottom: 8px; }
+  .legend .row:last-child { margin-bottom: 0; }
+  .meta-table { font-size: 12px; color: #6b6b66; margin: 10px 0 0; }
+  .structure-note {
+    background: #fff;
+    border-left: 4px solid #4a8a5c;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+  .structure-note strong { color: #1a4068; }
+
+  /* Star system */
+  .star-lv { display: block; font-size: 11.5px; line-height: 1.75; }
+  .star-fixed { font-size: 12px; }
+  .crit-block { margin-bottom: 6px; }
+  .crit-block:last-child { margin-bottom: 0; }
+  .crit-label { font-size: 10.5px; font-weight: 700; color: #6b6b66; display: block; margin-bottom: 1px; }
+</style>
+</head>
+<body>
+
+<h1>目標スコア別 課題リスト v3</h1>
+<p class="subtitle">症状 → 原因候補 → 達成基準 (練習 ⭐️/⭐️⭐️/⭐️⭐️⭐️ + ラウンド) の因果構造で整理</p>
+
+<div class="structure-note">
+  <strong>v2 からの変更:</strong>
+  「ティーショットで OB を打つ」(症状) と「持ち玉が決まっていない」(原因) が同列にあった混乱を解消。
+  1つの症状に対し複数の原因候補を並べ、各原因に達成基準を紐付ける形に再構成。
+  ユーザーは「自分の症状はこれ → 原因はどれか考えて選ぶ → その原因の達成基準を満たす」というフローで使う。<br><br>
+  <strong>v3 追加:</strong>
+  「達成基準 (練習)」に加え「<strong style="color:#2a4a6a">ラウンド評価基準</strong>」を追加。
+  練習場でクリアしても、コースで発揮されるまでが本当の解決。
+  ラウンド評価基準は練習ラウンド (または通常ラウンドの記録) で直近 3〜5R の統計で判定する。
+</div>
+
+<div class="legend">
+  <strong>列の意味</strong>
+  <div class="row">
+    <strong style="display:inline">症状</strong>＝コースで観察される結果 /
+    <strong style="display:inline">原因</strong>＝なぜそれが起きるか (複数候補) /
+    <strong style="display:inline">タイプ</strong>＝何で解決するか /
+    <strong style="display:inline">場所</strong>＝どこで取り組むか /
+    <strong style="display:inline">達成基準</strong>＝練習で解決と言える条件 /
+    <strong style="display:inline; color:#2a4a6a">ラウンド評価基準</strong>＝コースで何ラウンド後に何が起きれば解決か /
+    <strong style="display:inline">なぜ</strong>＝そのスコアになぜ必要か
+  </div>
+  <strong>原因タイプ</strong>
+  <div class="row">
+    <span class="type type-skill">技術</span> 練習で精度を上げる /
+    <span class="type type-mgmt">マネジメント</span> 判断/ルール作り /
+    <span class="type type-know">知識</span> 知らないと損 /
+    <span class="type type-gear">道具</span> ギアの問題 /
+    <span class="type type-mental">メンタル</span> 集中/安定性
+  </div>
+  <strong>区分 (症状の領域)</strong>
+  <div class="row">
+    <span class="cat cat-tee">TEE</span>
+    <span class="cat cat-iron">IRON</span>
+    <span class="cat cat-app">APPROACH</span>
+    <span class="cat cat-bunk">BUNKER</span>
+    <span class="cat cat-putt">PUTT</span>
+    <span class="cat cat-mgmt">MGMT</span>
+    <span class="cat cat-mental">MENTAL</span>
+  </div>
+  <strong>実践場所</strong>
+  <div class="row">
+    <span class="loc loc-range">打ちっぱなし</span>
+    <span class="loc loc-app">アプローチ</span>
+    <span class="loc loc-bunk">バンカー</span>
+    <span class="loc loc-green">グリーン</span>
+    <span class="loc loc-home">家(パターマット)</span>
+    <span class="loc loc-sponge">家(スポンジ)</span>
+    <span class="loc loc-desk">家(机上)</span>
+    <span class="loc loc-sim">シミュレーター</span>
+    <span class="loc loc-course">コース</span>
+  </div>
+  <strong>達成基準の星 (skill系のみ)</strong>
+  <div class="row">
+    ⭐️ = 50% / ⭐️⭐️ = 80% / ⭐️⭐️⭐️ = 100%<br>
+    マネジメント・知識・メンタル系は <span class="star-fixed">⭐️⭐️⭐️</span> 固定 (達成/未達成)
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>100切り <span class="target-tag">CURRENT: 110-120</span></h2>
+  <p class="target-desc">大叩き (トリプル+) を減らす段階。1ホール平均 5.5打 以下が目標。</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:14%">症状</th>
+        <th style="width:17%">原因候補</th>
+        <th style="width:6%">タイプ</th>
+        <th style="width:9%">場所</th>
+        <th style="width:19%">達成基準 (練習)</th>
+        <th style="width:19%">ラウンド評価基準</th>
+        <th style="width:16%">なぜ重要</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- TEE: OB rowspan=4 -->
+      <tr>
+        <td class="symptom" rowspan="4">
+          <span class="sym-cat"><span class="cat cat-tee">TEE</span></span>
+          ティーショットで OB を打つ
+        </td>
+        <td class="cause">持ち玉が決まっていない (左右どちらに曲がるか読めない)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">Dr 10球 (同じ方向に曲がる球)<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で OB 平均 1.5個以下</td>
+        <td class="why" rowspan="4">100切りで最大のスコア漏れ。1 OB = +2打。1R 2個減らすだけで -4打</td>
+      </tr>
+      <tr>
+        <td class="cause">曲幅が大きすぎる</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">Dr 10球。練習場の目印 (柱・ネット等) 2点間を「許容ゾーン」に設定し、全球がその間に収まるか目視確認<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で OB 平均 1.5個以下</td>
+      </tr>
+      <tr>
+        <td class="cause">OB/ハザード位置を確認せず打っている</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> 各ホールのティーショット前に OB/池/林の位置を確認するルーティンを作れた</td>
+        <td class="round-crit">3R 連続でラウンド前にコースガイド確認を実施した</td>
+      </tr>
+      <tr>
+        <td class="cause">OBに届くクラブを選んでいる (ティーショット・PAR5 2nd共通。「届かせたい距離」とOBまでの距離-散らばり幅を比べていない)</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ティーショット・PAR5 2nd で、OBに届いてしまうクラブを必要なく選ばない習慣になった</td>
+        <td class="round-crit">直近3R で OB 合計 2個以下</td>
+      </tr>
+
+      <!-- TEE: チョロ -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-tee">TEE</span></span>
+          ティーショットでチョロ (前に飛ばない)
+        </td>
+        <td class="cause">Dr でコンタクトが不安定</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">Dr ダフリ・トップ・チョロなしで 200yd以上 / 10球<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R でチョロ 合計 0回</td>
+        <td class="why">前進ゼロ=ホールが終わる。チョロ 1回 = +1〜2打</td>
+      </tr>
+
+      <!-- APPROACH: ザックリ rowspan=2 -->
+      <tr>
+        <td class="symptom" rowspan="2">
+          <span class="sym-cat"><span class="cat cat-app">APPROACH</span></span>
+          グリーン周りでザックリ (大ダフリ)
+        </td>
+        <td class="cause">アプローチのコンタクト不良</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-app">アプローチ</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="crit">
+          <div class="crit-block">
+            <span class="crit-label">練習場</span>
+            30yd ピッチ 10球でダフリ・トップ・チョロなし、30yd 看板周辺にキャリー<br>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 8/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+          </div>
+          <div class="crit-block">
+            <span class="crit-label">家(スポンジ箱) 3m先に靴箱</span>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 7/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 9/10</span>
+          </div>
+        </td>
+        <td class="round-crit">直近3R でグリーン周りのザックリ 1R 平均 1回以下</td>
+        <td class="why" rowspan="2">ザックリで +1〜2打。100切りの天敵</td>
+      </tr>
+      <tr>
+        <td class="cause">ライの判断ミス (ベアグラウンドや薄芝で通常打ちしている)</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ライ別攻略 tips を読み、実践するものにチェックを入れた (+ 自由記述で完了)</td>
+        <td class="round-crit">直近3R でグリーン周りのザックリ 1R 平均 1回以下</td>
+      </tr>
+
+      <!-- APPROACH: トップ -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-app">APPROACH</span></span>
+          アプローチでトップ (奥にホームラン)
+        </td>
+        <td class="cause">アプローチのコンタクト不良</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-app">アプローチ</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="crit">
+          <div class="crit-block">
+            <span class="crit-label">練習場</span>
+            30yd ピッチ 10球でグリーンオン<br>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 8/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+          </div>
+          <div class="crit-block">
+            <span class="crit-label">家(スポンジ箱) 3m先に靴箱</span>
+            箱を越えない<br>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 8/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+          </div>
+        </td>
+        <td class="round-crit">直近3R でアプローチトップ 1R 平均 1回以下</td>
+        <td class="why">トップで奥に行くとさらに難しい状況に</td>
+      </tr>
+
+      <!-- IRON: 80yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          80yd でグリーンに乗らない
+        </td>
+        <td class="cause">80yd の精度不足 (SW/PW)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">80yd ショット 5球。練習場の 80yd 前後グリーンに向かってキャリーでグリーンオン<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 80yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">コンフィデンス距離の基点。ここが不安定だとアプローチ全体が崩れる</td>
+      </tr>
+
+      <!-- IRON: 90yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          90yd でグリーンに乗らない
+        </td>
+        <td class="cause">90yd の精度不足 (PW)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">90yd ショット 5球。練習場の 90yd 前後グリーンに向かってキャリーでグリーンオン<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 90yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">ボギーオン率に直結する距離帯</td>
+      </tr>
+
+      <!-- IRON: 100yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          100yd でグリーンに乗らない
+        </td>
+        <td class="cause">100yd の精度不足 (PW/9I)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">100yd ショット 5球。練習場の 100yd 前後グリーンに向かってキャリーでグリーンオン<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 100yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">寄せワン狙える絶好の距離。乗せられないと寄せワン圏外</td>
+      </tr>
+
+      <!-- IRON: フルショットダフリ/トップ -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          フルショットでダフリ/トップ (前に飛ばない)
+        </td>
+        <td class="cause">アイアンのコンタクト不良</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">7I 10球でダフリ・トップ・シャンクなし、かつ 140yd以上<br>
+          <span class="star-lv">⭐️ 5球以下ミス</span>
+          <span class="star-lv">⭐️⭐️ 2球以下ミス</span>
+          <span class="star-lv">⭐️⭐️⭐️ ミス 0球</span>
+        </td>
+        <td class="round-crit">直近3R で 7I 以下フルショットの大ダフリ/大トップ 1R 平均 2回以下</td>
+        <td class="why">セカンドが進まないとボギーオン不可</td>
+      </tr>
+
+      <!-- BUNKER: 脱出 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-bunk">BUNKER</span></span>
+          バンカーから一発で出ない
+        </td>
+        <td class="cause">バンカーショット未経験/不慣れ</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-bunk">バンカー練習場</span></td>
+        <td class="crit">ガードバンカー 10球。1打でバンカーから出せたら成功<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R でバンカー 1打脱出率 80%以上</td>
+        <td class="why">出ない = +2〜3打確定。最大級のスコア漏れ</td>
+      </tr>
+
+      <!-- PUTT: 1m -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          1m パットを外す
+        </td>
+        <td class="cause">フェース向きが安定しない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-home">家(パターマット)</span></td>
+        <td class="crit">ゲートドリル (1m)<br>
+          <span class="star-lv">⭐️ 3球連続</span>
+          <span class="star-lv">⭐️⭐️ 5球連続</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10球連続</span>
+        </td>
+        <td class="round-crit">直近3R で 1m 前後パット成功率 70%以上</td>
+        <td class="why">1m を外す = ボギーがダボに</td>
+      </tr>
+
+      <!-- PUTT: 3パット -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          3パットを打つ
+        </td>
+        <td class="cause">ロングパットのタッチ感がない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-green">グリーン</span></td>
+        <td class="crit">10m パット。カップ前後 1m にティーを差し、その間に止まる<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で 3パット 1R 平均 2個以下</td>
+        <td class="why">3パット 1回 = +1打</td>
+      </tr>
+
+      <!-- MGMT: 番手選択 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          番手選択が当たらない (狙いと違う距離)
+        </td>
+        <td class="cause">クラブごとの平均距離を把握していない</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sim">SIM</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> 全クラブのキャリー距離・トータル距離 (ラン込み) を把握し、アプリのクラブセッティングに登録した。計測手段は問わない (練習場のヤード看板目安 / 距離計測アプリ / Top Tracer 等)</td>
+        <td class="round-crit">3R 連続でクラブ距離表を参照して番手を選択した</td>
+        <td class="why">距離不明=番手選択ミス頻発。100切りの最も即効性ある対策</td>
+      </tr>
+
+      <!-- MENTAL: 大叩き連鎖 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mental">MENTAL</span></span>
+          大叩きしたホールの次もまた大叩き
+        </td>
+        <td class="cause">大叩き後にメンタルリセットができていない</td>
+        <td><span class="type type-mental">メンタル</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> メンタルリセット tips (名プレーヤーの言葉含む) を読み、気持ちの切り替え方を理解した (読了で完了)</td>
+        <td class="round-crit">直近3R で大叩き後の次ホールがボギー以内の確率 60%以上</td>
+        <td class="why">100切り層は崩れたら止まらない。事前ルールが命綱</td>
+      </tr>
+
+      <!-- MGMT: ミスゾーン管理 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          グリーンを外した位置が悪くリカバリー不能になる
+        </td>
+        <td class="cause">どこが「ダメな外し方」か把握していない (砲台オーバー、ショートサイドバンカー等)</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ミスゾーン管理 tips を読み、実践するものにチェックを入れた (+ 自由記述で完了)</td>
+        <td class="round-crit">直近3R で砲台グリーンオーバー 0回</td>
+        <td class="why">外す場所が悪いと次打が極めて難しくなる。外し方を選べるだけで -2〜3打</td>
+      </tr>
+
+      <!-- MGMT: コンフィデンス距離 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          レイアップ距離が毎回バラバラ (どこに残すか決まっていない)
+        </td>
+        <td class="cause">グリーンに乗せられる自信のある距離 (コンフィデンス距離) を把握していない</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> アプリにコンフィデンス距離 (○yd) を入力して完了 (言語化することが目的)</td>
+        <td class="round-crit">直近3R でコンフィデンス距離を超えた番手で無理にグリーンを狙った場面が 1R 1回以下</td>
+        <td class="why">この距離を知るだけでレイアップ戦略が生まれる。番手選択の根拠になる</td>
+      </tr>
+
+      <!-- MGMT: ボギーオン率 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ボギーオン率が低い (半分以上のホールで時間内にグリーンに乗れていない)
+        </td>
+        <td class="cause">ホールの組み立てができていない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-course">コース (練習ラウンド)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ボギーオン戦略 tips を読んで理解した + 練習ラウンドでボギーオン率の記録を開始した</td>
+        <td class="round-crit">直近3R でボギーオン率 55%以上 (18ホール中 10ホール以上)</td>
+        <td class="why">ボギーオン率 55%以上が 100切りの統計的目安。組み立ての結果が数値になる</td>
+      </tr>
+
+    </tbody>
+  </table>
+  <p class="meta-table">20 症状 / 20 原因ペア</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>90切り <span class="target-tag">CURRENT: 95-105</span></h2>
+  <p class="target-desc">ボギーオン率 70-80% を目指す段階。100切りの課題は全て解決済が前提。</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:14%">症状</th>
+        <th style="width:17%">原因候補</th>
+        <th style="width:6%">タイプ</th>
+        <th style="width:9%">場所</th>
+        <th style="width:19%">達成基準 (練習)</th>
+        <th style="width:19%">ラウンド評価基準</th>
+        <th style="width:16%">なぜ重要</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- TEE: 方向性 rowspan=2 -->
+      <tr>
+        <td class="symptom" rowspan="2">
+          <span class="sym-cat"><span class="cat cat-tee">TEE</span></span>
+          ティーショット方向性 (1R で OB 1個以下にしたい)
+        </td>
+        <td class="cause">持ち玉精度が甘い (曲幅 50yd 超える)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">Dr 10球。あらかじめ「許容ゾーン」の目印 2本を設定し、全球がその間に収まるか目視確認 (±25yd 相当の高精度を目指す)<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で OB 1個以下が 2/3R 以上</td>
+        <td class="why" rowspan="2">90切りラインでは OB 1個まで。曲幅をさらに抑える必要</td>
+      </tr>
+      <tr>
+        <td class="cause">緊張するホールで持ち玉が出ない</td>
+        <td><span class="type type-mental">メンタル</span></td>
+        <td><span class="loc loc-course">コース</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> 直近5R で池/OB隣接ホールでも逆球が 20%以下 (コースでのみ確認)</td>
+        <td class="round-crit">直近5R で OB 平均 1個以下</td>
+      </tr>
+
+      <!-- TEE: 飛距離 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-tee">TEE</span></span>
+          ティー飛距離が足りない (200yd 以下)
+        </td>
+        <td class="cause">Dr で飛距離が出ない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sim">SIM</span></td>
+        <td class="crit">Dr 10球でキャリー 200yd以上<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 7/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で PAR4 の 2nd 平均残り 150yd以下</td>
+        <td class="why">200yd 切るとパー4 で 2nd 残り 200yd+ になりボギーオン困難</td>
+      </tr>
+
+      <!-- IRON: 110yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          110yd でグリーンに乗らない
+        </td>
+        <td class="cause">110yd の精度不足 (9I)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">110yd ショット 5球。着地させたいエリア (グリーン相当) をあらかじめ決め、収まったか目視確認<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 110yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">90切りのセカンドでよく残る距離帯</td>
+      </tr>
+
+      <!-- IRON: 120yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          120yd でグリーンに乗らない
+        </td>
+        <td class="cause">120yd の精度不足 (8I)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">120yd ショット 5球。着地させたいエリア (グリーン相当) をあらかじめ決め、収まったか目視確認<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 120yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">ボギーオンからパーオンへの移行期にある距離</td>
+      </tr>
+
+      <!-- IRON: 130yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          130yd でグリーンに乗らない
+        </td>
+        <td class="cause">130yd の精度不足 (7I)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">130yd ショット 5球。着地させたいエリア (グリーン相当) をあらかじめ決め、収まったか目視確認<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 130yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">90切りのパーオン目安距離。ここまで安定すればパーオン率 20%以上が見えてくる</td>
+      </tr>
+
+      <!-- IRON/APPROACH: コンタクト不良 (シャンク含む) 90切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span> <span class="cat cat-app">APPROACH</span></span>
+          アイアン・アプローチでコンタクトミスが出る (シャンク含む)
+        </td>
+        <td class="cause">コンタクト精度の維持不足 (ダフリ・トップ・シャンク)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-app">アプローチ</span></td>
+        <td class="crit">7I〜SW 各 10球でダフリ・トップ・シャンクなし<br>
+          <span class="star-lv">⭐️ 各 5球以下ミス</span>
+          <span class="star-lv">⭐️⭐️ 各 2球以下ミス</span>
+          <span class="star-lv">⭐️⭐️⭐️ 各 ミス 0球</span>
+        </td>
+        <td class="round-crit">直近3R でシャンク 0回</td>
+        <td class="why">90切り層でもコンタクトミスは出る。「出ていない」自信がスコアを安定させる</td>
+      </tr>
+
+      <!-- APPROACH: 30yd アプローチ rowspan=2 -->
+      <tr>
+        <td class="symptom" rowspan="2">
+          <span class="sym-cat"><span class="cat cat-app">APPROACH</span></span>
+          30yd アプローチで寄せワン圏外
+        </td>
+        <td class="cause">距離感の精度不足</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-app">アプローチ</span></td>
+        <td class="crit">30yd ピッチ 10球で 3m 以内<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で 30yd 前後アプローチの 1パット圏率 30%以上</td>
+        <td class="why" rowspan="2">ボギーオン後 1パットで上がる確率を上げる</td>
+      </tr>
+      <tr>
+        <td class="cause">ライ別 (ラフ/カラー/ベアグラウンド) の使い分けができない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-app">アプローチ</span></td>
+        <td class="crit">3種のライから 30yd ピッチで 5m 以内<br>
+          <span class="star-lv">⭐️ それぞれ5/10</span>
+          <span class="star-lv">⭐️⭐️ それぞれ7/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ それぞれ9/10</span>
+        </td>
+        <td class="round-crit">直近3R でアプローチの大ミス (ザックリ/ホームラン) が 1R 1回以下</td>
+      </tr>
+
+      <!-- APPROACH: 寄せワン率 90切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-app">APPROACH</span></span>
+          グリーン周りから 2打以上かかってボギーが取れない
+        </td>
+        <td class="cause">寄せワン精度が低い (グリーンに乗せるだけで精一杯)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-app">アプローチ</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="crit">
+          <div class="crit-block">
+            <span class="crit-label">練習場</span>
+            30yd ピッチ 10球で 3m 以内<br>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 7/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 9/10</span>
+          </div>
+          <div class="crit-block">
+            <span class="crit-label">家(スポンジ箱) 3m先に靴箱</span>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 7/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 9/10</span>
+          </div>
+        </td>
+        <td class="round-crit">直近3R で寄せワン率 20%以上 (グリーン周りから 5回に 1回は 1パット圏内)</td>
+        <td class="why">ボギーオン率 80%でも寄せワンがゼロだとスコアは伸びない。ショートゲームは技術習得コストが最も低く、最速でスコアに直結する</td>
+      </tr>
+
+      <!-- BUNKER: 5m -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-bunk">BUNKER</span></span>
+          バンカーから出ても寄らない
+        </td>
+        <td class="cause">バンカーの距離感不足</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-bunk">バンカー練習場</span></td>
+        <td class="crit">ガードバンカー 10球。カップから 5m の位置にティーを差し、その内側に止める<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 7/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 9/10</span>
+        </td>
+        <td class="round-crit">直近3R でバンカー後 2パット以内率 60%以上</td>
+        <td class="why">出すだけでなく寄せる段階</td>
+      </tr>
+
+      <!-- PUTT: 2m -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          2m パットを外す
+        </td>
+        <td class="cause">2m の精度不足</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-home">家(パターマット)</span> <span class="loc loc-green">グリーン</span></td>
+        <td class="crit">2m パット 10球<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で 2m 前後パット成功率 50%以上</td>
+        <td class="why">パーセーブ・ボギー死守の境目</td>
+      </tr>
+
+      <!-- PUTT: ロングパット -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          ロングパットでカップ寄せられない (3パット要因)
+        </td>
+        <td class="cause">距離感 (タッチ) が安定しない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-green">グリーン</span></td>
+        <td class="crit">10m パット。カップ前後 1m にティーを差し、その間に止まる<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で 3パット 1R 1個以下</td>
+        <td class="why">3パットを 1R 1個以下にする</td>
+      </tr>
+
+      <!-- MGMT: 持ち玉確立 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          狙いどころが決められない
+        </td>
+        <td class="cause">持ち玉 (フェード or ドロー) が決まっていない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">Dr 10球で同じ持ち玉が<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で持ち玉逆方向への大ミスが 1R 1個以下</td>
+        <td class="why">持ち玉が決まらないと狙いが決まらない</td>
+      </tr>
+
+      <!-- MGMT: ピン奥3パット -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ピン奥について 3パットで崩れる
+        </td>
+        <td class="cause">ピンを狙うか中央を狙うか判断できていない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ピン位置別の狙い方 tips を読み、実践するものにチェックを入れた (+ 自由記述で完了)</td>
+        <td class="round-crit">直近3R でパーオン後 3パット 1R 1個以下</td>
+        <td class="why">90切り層はピン奥につけて 3パットで崩れがち</td>
+      </tr>
+
+      <!-- MGMT: PAR5 大叩き -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          PAR5 の 2nd で大叩き (2オン狙って池/林)
+        </td>
+        <td class="cause">PAR5 戦略のルールがない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> PAR5 戦略 tips を読み、実践するものにチェックを入れた (+ 自由記述で完了)</td>
+        <td class="round-crit">直近3R で PAR5 スコア平均 6.5以下</td>
+        <td class="why">2オン狙って大叩きが 90切り崩しの典型</td>
+      </tr>
+
+      <!-- MGMT: ミスゾーン管理 90切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ショートサイドに外して脱出困難になる
+        </td>
+        <td class="cause">ショートサイド/ロングサイドの概念を理解していない</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ショートサイド/ロングサイド攻略 tips を読み、実践するものにチェックを入れた (+ 自由記述で完了)</td>
+        <td class="round-crit">直近3R でショートサイドバンカー入水が 1R 1回以下</td>
+        <td class="why">ショートサイドミスは脱出に2打以上かかることが多い</td>
+      </tr>
+
+      <!-- MGMT: コンフィデンス距離 90切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          レイアップ先をその場の感覚で決めている
+        </td>
+        <td class="cause">コンフィデンス距離を把握・更新できていない</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> アプリにコンフィデンス距離 (○yd) を入力して完了。120yd 以上を目安に更新</td>
+        <td class="round-crit">直近3R でコンフィデンス距離を超えた無理な狙いが 1R 1回以下</td>
+        <td class="why">90切り層はコンフィデンス距離が 120yd+ に伸びていることが目安</td>
+      </tr>
+
+      <!-- MGMT: ボギーオン率 90切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ボギーオン率が 80%に届かない
+        </td>
+        <td class="cause">ホールの組み立て精度が足りない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-course">コース (練習ラウンド)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ボギーオン戦略 tips を読んで理解した + 練習ラウンドでボギーオン率の記録を継続している</td>
+        <td class="round-crit">直近3R でボギーオン率 80%以上 (18ホール中 14〜15ホール以上)</td>
+        <td class="why">ボギーオン率 80%が 90切りの統計的目安</td>
+      </tr>
+
+    </tbody>
+  </table>
+  <p class="meta-table">19 症状 / 19 原因ペア</p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── -->
+<section>
+  <h2>80切り <span class="target-tag">CURRENT: 85-95</span></h2>
+  <p class="target-desc">パーオン率 30-40%、パーセーブが武器になる段階。100/90切りの課題は全て解決済が前提。</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:14%">症状</th>
+        <th style="width:17%">原因候補</th>
+        <th style="width:6%">タイプ</th>
+        <th style="width:9%">場所</th>
+        <th style="width:19%">達成基準 (練習)</th>
+        <th style="width:19%">ラウンド評価基準</th>
+        <th style="width:16%">なぜ重要</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- TEE: 飛距離 230yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-tee">TEE</span></span>
+          PAR4 のセカンドが 150yd+ 残ってしまう
+        </td>
+        <td class="cause">Dr の飛距離が 230yd 未満</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sim">SIM</span></td>
+        <td class="crit">Dr 10球でキャリー 230yd以上<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で PAR4 の 2nd 平均残り 130yd以下</td>
+        <td class="why">230yd 切ると PAR4 でセカンドが 150yd+ 残る</td>
+      </tr>
+
+      <!-- IRON: 140yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          140yd でグリーンに乗らない
+        </td>
+        <td class="cause">140yd の精度不足 (7I/6I)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">140yd ショット 5球。着地させたいエリア (グリーン相当) をあらかじめ決め、収まったか目視確認<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 140yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">80切りのパーオン率に直結する距離。ここが安定するとパーオン率 30%が見えてくる</td>
+      </tr>
+
+      <!-- IRON: 150yd -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          150yd でグリーンに乗らない
+        </td>
+        <td class="cause">150yd の精度不足 (6I/5I)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">150yd ショット 5球。着地させたいエリア (グリーン相当) をあらかじめ決め、収まったか目視確認<br>
+          <span class="star-lv">⭐️ 3/5</span>
+          <span class="star-lv">⭐️⭐️ 4/5</span>
+          <span class="star-lv">⭐️⭐️⭐️ 5/5</span>
+        </td>
+        <td class="round-crit">直近3R で 150yd 前後からグリーンオン率 60%以上</td>
+        <td class="why">コンフィデンス距離 150yd が 80切りの目標値。ここが安定して初めてパーオン率 30%+が現実的</td>
+      </tr>
+
+      <!-- IRON: 長距離 PAR5 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          PAR5 で 2オン狙いが乗らない / 長い PAR4 で大叩き
+        </td>
+        <td class="cause">180yd+ の長距離精度が出ていない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">5I or 4U 10球で 30yd 範囲内 (左右±20yd) に<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で PAR5 スコア平均 5.5以下</td>
+        <td class="why">PAR5 で2オン狙う、長い PAR4 で乗せる、80切りに必須の番手</td>
+      </tr>
+
+      <!-- IRON: 100yd ピン狙い -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-iron">IRON</span></span>
+          100yd 残りでピンに寄せられない (バーディ取れない)
+        </td>
+        <td class="cause">100yd でピン狙いの精度が出ていない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit">100yd ショット 10球で 5m 以内 (ピン狙いの範囲) に<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で 100yd 以内からの 1パット圏率 40%以上</td>
+        <td class="why">残り 100yd 以内をピンに付けてバーディを取りに行く距離</td>
+      </tr>
+
+      <!-- APPROACH: 寄せワン率 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-app">APPROACH</span></span>
+          寄せワン率 30% に届かない
+        </td>
+        <td class="cause">寄せワン精度の不足 (距離感+コンタクト)</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-app">アプローチ</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="crit">
+          <div class="crit-block">
+            <span class="crit-label">練習場</span>
+            30yd ピッチ 10球で 2m 以内<br>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 8/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+          </div>
+          <div class="crit-block">
+            <span class="crit-label">家(スポンジ箱) 3m先に靴箱</span>
+            <span class="star-lv">⭐️ 5/10</span>
+            <span class="star-lv">⭐️⭐️ 7/10</span>
+            <span class="star-lv">⭐️⭐️⭐️ 9/10</span>
+          </div>
+        </td>
+        <td class="round-crit">直近3R で寄せワン率 30%以上</td>
+        <td class="why">パーオン外しても寄せワンでスコア守る</td>
+      </tr>
+
+      <!-- BUNKER: サンドセーブ -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-bunk">BUNKER</span></span>
+          サンドセーブ率が低い
+        </td>
+        <td class="cause">バンカーから 1パット圏内に寄せられない</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-bunk">バンカー練習場</span></td>
+        <td class="crit">ガードバンカー 10球。カップから 3m の位置にティーを差し、その内側に止める<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 7/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 9/10</span>
+        </td>
+        <td class="round-crit">直近3R でサンドセーブ率 40%以上</td>
+        <td class="why">サンドセーブ率を上げてパーセーブ</td>
+      </tr>
+
+      <!-- PUTT: 3m バーディ -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          バーディチャンス (3m前後) を決められない
+        </td>
+        <td class="cause">3m パットの成功率が低い</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-green">グリーン</span></td>
+        <td class="crit">3m パット 10球<br>
+          <span class="star-lv">⭐️ 4/10</span>
+          <span class="star-lv">⭐️⭐️ 6/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 8/10</span>
+        </td>
+        <td class="round-crit">直近3R でバーディ 1R 平均 0.5個以上</td>
+        <td class="why">バーディチャンスを物にする</td>
+      </tr>
+
+      <!-- PUTT: 15m パーオン後 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          パーオン後の 3パット
+        </td>
+        <td class="cause">超ロングパット (15m+) のタッチが甘い</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-green">グリーン</span></td>
+        <td class="crit">15m パット。カップ前後 1m にティーを差し、その間に止まる<br>
+          <span class="star-lv">⭐️ 5/10</span>
+          <span class="star-lv">⭐️⭐️ 8/10</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10</span>
+        </td>
+        <td class="round-crit">直近3R で 3パット 1R 0.5個以下</td>
+        <td class="why">パーオン率上がるとロングパット機会増</td>
+      </tr>
+
+      <!-- PUTT: 傾斜読み -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-putt">PUTT</span></span>
+          打ったラインがズレる (ラインの読み違い)
+        </td>
+        <td class="cause">傾斜の読みの精度不足</td>
+        <td><span class="type type-skill">技術</span></td>
+        <td><span class="loc loc-green">グリーン (スマホ水平器アプリ)</span></td>
+        <td class="crit">パッティンググリーンのランダムな 10箇所で①足の感覚で傾斜方向と強弱を予測②スマホ水平器アプリで実測③一致確認。強弱の定義: 弱=1%未満 / 中=1〜2% / 強=2%超<br>
+          <span class="star-lv">⭐️ 5/10一致</span>
+          <span class="star-lv">⭐️⭐️ 8/10一致</span>
+          <span class="star-lv">⭐️⭐️⭐️ 10/10一致</span>
+        </td>
+        <td class="round-crit">直近3R で 3m 以内のパット成功率 50%以上</td>
+        <td class="why">パットの精度はラインの読みで半分決まる</td>
+      </tr>
+
+      <!-- MGMT: リスクリワード -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          攻めるべき場面で守って、守るべき場面で攻めてしまう
+        </td>
+        <td class="cause">リスクリワード判断のルールがない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> 「ピンが奥右、池が手前左」のような複合状況10種で自分の狙いと理由を書き出した</td>
+        <td class="round-crit">直近3R で自分の判断ルールに従えなかった場面が 1R 1回以下</td>
+        <td class="why">80切り層はリスクを取る判断と引き下がる判断の精度が問われる</td>
+      </tr>
+
+      <!-- MGMT: 散らばり中央 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ピンを直接狙うとミスがハザードに行く
+        </td>
+        <td class="cause">自分の球の散らばりを考慮して狙いを決めていない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> 自分の持ち玉の左右散らばりの幅を把握し、狙いを「散らばり中央」に置く設計を書き出した</td>
+        <td class="round-crit">直近3R でハザード起因の大叩き (+3以上) が 1R 1回以下</td>
+        <td class="why">プロは球の散らばり中央を狙う</td>
+      </tr>
+
+      <!-- MENTAL: 上がり3 -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mental">MENTAL</span></span>
+          上がり3ホール (16-18番) で崩れる
+        </td>
+        <td class="cause">終盤の集中力が落ちる/数字を意識しすぎる</td>
+        <td><span class="type type-mental">メンタル</span></td>
+        <td><span class="loc loc-course">コース</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> 直近5ラウンドの 16-18番スコア合計 と 1-15番ホール平均×3 の差が +2 以内</td>
+        <td class="round-crit">直近5R で 16-18番スコア合計 と 1-15番平均×3 の差が +2以内</td>
+        <td class="why">あと一歩で崩れるパターン撲滅</td>
+      </tr>
+
+      <!-- MENTAL: ダボ後ダボ -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mental">MENTAL</span></span>
+          ダボ叩いた直後にまたダボ
+        </td>
+        <td class="cause">メンタルリセットができていない</td>
+        <td><span class="type type-mental">メンタル</span></td>
+        <td><span class="loc loc-course">コース</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> メンタルリセット tips を読んで理解した + 直近5ラウンドでダボ後の次ホールがダボ以上の確率が 20%以下</td>
+        <td class="round-crit">直近5R でダボ後の次ホールがダボ以上の確率 20%以下</td>
+        <td class="why">連続ダボでスコアが一気に崩壊</td>
+      </tr>
+
+      <!-- MGMT: ミスゾーン管理 80切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ピン位置に関係なく同じ方向に狙ってハザードに入る
+        </td>
+        <td class="cause">ピン位置×ハザード配置×持ち玉でミスゾーンを事前設計していない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ミスゾーン設計 tips を読み、実践するものにチェックを入れた (+ 自由記述で完了)</td>
+        <td class="round-crit">直近3R でハザード起因の大叩き (+3以上) が 1R 1回以下</td>
+        <td class="why">80切り層はミスの質をコントロールできる必要がある</td>
+      </tr>
+
+      <!-- MGMT: コンフィデンス距離 80切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          コンフィデンス距離が 140yd 未満のままでパーオン率が上がらない
+        </td>
+        <td class="cause">コンフィデンス距離を 140yd 以上に伸ばせていない</td>
+        <td><span class="type type-know">知識</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> アプリにコンフィデンス距離 (○yd) を入力して完了。140yd 以上を目安に更新</td>
+        <td class="round-crit">直近3R でコンフィデンス距離内からのグリーンオン率 60%以上を維持</td>
+        <td class="why">80切りのコンフィデンス距離目標は 150yd。140yd 超えが第一関門</td>
+      </tr>
+
+      <!-- MGMT: ボギーオン率 80切り -->
+      <tr>
+        <td class="symptom" rowspan="1">
+          <span class="sym-cat"><span class="cat cat-mgmt">MGMT</span></span>
+          ボギーオン率が 100%に届かない (取りこぼしがある)
+        </td>
+        <td class="cause">全ホールでボギーオンできるレベルの組み立て・技術が揃っていない</td>
+        <td><span class="type type-mgmt">マネジメント</span></td>
+        <td><span class="loc loc-course">コース (練習ラウンド)</span></td>
+        <td class="crit"><span class="star-fixed">⭐️⭐️⭐️</span> ボギーオン戦略 tips を読んで理解した + 練習ラウンドでボギーオン率を毎回記録し、95%以上を達成したラウンドがある</td>
+        <td class="round-crit">直近3R でボギーオン率 90%以上 (18ホール中 16ホール以上) を 2R 以上達成</td>
+        <td class="why">全ホールボギーオンは理論的には理想だが、実際には寄せワン・バーディで補える。まずは 90%安定が現実的な目標</td>
+      </tr>
+
+    </tbody>
+  </table>
+  <p class="meta-table">17 症状 / 17 原因ペア</p>
+</section>
+
+<section style="margin-top: 64px; padding-top: 32px; border-top: 1px solid #d5cfb8;">
+  <h2 style="font-size: 18px; border: none; padding: 0;">合計</h2>
+  <p style="font-size: 14px; color: #6b6b66;">
+    100切り: 20 症状 / 20 原因ペア<br>
+    90切り: 19 症状 / 19 原因ペア<br>
+    80切り: 17 症状 / 17 原因ペア<br>
+    <strong>合計 56 症状 / 56 原因ペア</strong>
+  </p>
+  <p style="font-size: 13px; color: #6b6b66; margin-top: 12px;">
+    <strong>v2 → v3 の変更点:</strong><br>
+    - 「症状」と「原因」を明確に分離 (例: OB を打つ=症状、持ち玉なし=原因)<br>
+    - 1つの症状に複数原因がある場合は rowspan で並列表示<br>
+    - 「原因タイプ」(技術/マネジメント/知識/道具/メンタル) を追加し、何で解決するかを明示<br>
+    - 「ラウンド評価基準」カラムを追加。練習場での達成基準とは別に、実際のラウンドで直近 3〜5R の統計で解決を判定する基準を記載<br>
+    - 星システム (⭐️/⭐️⭐️/⭐️⭐️⭐️) を全達成基準に追加<br>
+    - 距離帯別アイアンドリル 8本 (80〜150yd) を追加<br>
+    - シャンク課題を追加 (IRON + APPROACH × 2レベル)<br>
+    - ミスゾーン管理を全3レベルに追加<br>
+    - コンフィデンス距離を全3レベルに追加<br>
+    - ボギーオン率を全3レベルのラウンド評価基準に追加<br>
+    - パット距離感ドリルを「前後1mティー方式」に統一<br>
+    - バンカー近さドリルを「カップからXmティー方式」に統一<br>
+    - 傾斜読みドリルをスマホ水平器+数値閾値方式に更新<br>
+    - スポンジ練習をアプローチのみに限定し「靴箱ドリル (3m)」に統一
+  </p>
+</section>
+
+</body>
+</html>

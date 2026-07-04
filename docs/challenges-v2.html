@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>目標スコア別 課題リスト v2</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Helvetica Neue", sans-serif;
+    background: #faf6ec;
+    color: #1a1714;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    line-height: 1.6;
+  }
+  h1 { font-size: 28px; margin: 0 0 8px; letter-spacing: -0.5px; }
+  .subtitle { font-size: 14px; color: #6b6b66; margin: 0 0 32px; }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 22px;
+    margin: 0 0 6px;
+    padding-left: 14px;
+    border-left: 6px solid #1a1714;
+    line-height: 1.3;
+  }
+  .target-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: #1a1714;
+    color: #faf6ec;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .target-desc { font-size: 13px; color: #6b6b66; margin: 0 0 20px 20px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    font-size: 13.5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  th {
+    background: #f0ebdb;
+    text-align: left;
+    padding: 10px 10px;
+    font-weight: 700;
+    font-size: 12px;
+    color: #1a1714;
+    border-bottom: 2px solid #d5cfb8;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 12px 10px;
+    vertical-align: top;
+    border-bottom: 1px solid #ece6d2;
+  }
+  tr:hover { background: #fcfaf2; }
+  .cat {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  .cat-tee   { background: #fde4d4; color: #8a3300; }
+  .cat-iron  { background: #d6e8f8; color: #114068; }
+  .cat-app   { background: #e6dcfb; color: #4a2580; }
+  .cat-bunk  { background: #f5e7c4; color: #6b4d00; }
+  .cat-putt  { background: #d4ecd5; color: #1e5b22; }
+  .cat-mgmt  { background: #f0e0e0; color: #7a2222; }
+  .cat-mental{ background: #e8e0d4; color: #5a4520; }
+  /* Location pills */
+  .loc {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    margin: 1px 0;
+    border: 1px solid;
+  }
+  .loc-range   { background: #fef9e7; color: #6b4d00; border-color: #e8d590; }
+  .loc-app     { background: #f0e7fc; color: #4a2580; border-color: #c8b0e8; }
+  .loc-bunk    { background: #fbe5b8; color: #6b4d00; border-color: #d8b870; }
+  .loc-green   { background: #d4ecd5; color: #1e5b22; border-color: #8cc88e; }
+  .loc-home    { background: #e8f0ff; color: #1a4080; border-color: #a8c5f0; }
+  .loc-sponge  { background: #fce0ec; color: #80244a; border-color: #e8a0c0; }
+  .loc-desk    { background: #e8e0d4; color: #5a4520; border-color: #c0b0a0; }
+  .loc-sim     { background: #ddf2f0; color: #1a5a55; border-color: #88c8c0; }
+  .loc-course  { background: #fbd9d4; color: #7a2222; border-color: #e09080; }
+  .ch { font-weight: 600; }
+  .crit { color: #1a1714; }
+  .why  { color: #6b6b66; font-size: 12.5px; }
+  .meta-table { font-size: 12.5px; color: #6b6b66; margin: 12px 0 0; }
+  .legend {
+    background: #fff;
+    padding: 14px 18px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    margin-bottom: 28px;
+    border: 1px solid #ece6d2;
+  }
+  .legend strong { color: #1a1714; display: block; margin-bottom: 6px; }
+  .legend .row { margin-bottom: 6px; }
+  .legend .row:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<h1>目標スコア別 課題リスト v2</h1>
+<p class="subtitle">各スコアに達成するために解決すべき課題と「練習場/家でこれができれば解決」の基準。打ち方は教えない。ドリル＝測り方。</p>
+
+<div class="legend">
+  <strong>列の意味</strong>
+  <div class="row"><strong style="display:inline">課題</strong>＝そのスコアを目指す人に共通して見られる問題 / <strong style="display:inline">達成基準</strong>＝そこで「これができれば解決と言える」測定可能な条件 / <strong style="display:inline">なぜ</strong>＝なぜこのスコアに必要か</div>
+  <strong>区分</strong>
+  <div class="row">
+    <span class="cat cat-tee">TEE</span>
+    <span class="cat cat-iron">IRON</span>
+    <span class="cat cat-app">APPROACH</span>
+    <span class="cat cat-bunk">BUNKER</span>
+    <span class="cat cat-putt">PUTT</span>
+    <span class="cat cat-mgmt">MGMT</span>
+    <span class="cat cat-mental">MENTAL</span>
+  </div>
+  <strong>実践場所</strong>
+  <div class="row">
+    <span class="loc loc-range">打ちっぱなし</span>
+    <span class="loc loc-app">アプローチ練習場</span>
+    <span class="loc loc-bunk">バンカー練習場</span>
+    <span class="loc loc-green">パッティンググリーン</span>
+    <span class="loc loc-home">家(パターマット)</span>
+    <span class="loc loc-sponge">家(スポンジ)</span>
+    <span class="loc loc-desk">家(机上)</span>
+    <span class="loc loc-sim">シミュレーター</span>
+    <span class="loc loc-course">コース</span>
+  </div>
+  <div class="row" style="margin-top:8px; color:#6b6b66;">
+    <strong style="display:inline">家(スポンジ) について:</strong> 数m先にバケツ等を置いてスポンジボールで狙うドリル。ダフリ・トップの症状はスポンジでも同じように出るため、コンタクト改善の有効な代替練習環境。
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────── -->
+<section>
+  <h2>100切り <span class="target-tag">CURRENT: 110-120</span></h2>
+  <p class="target-desc">大叩き (トリプル+) を減らす段階。技術より「ミスを最大化しない」のが中心。1ホール平均 5.5打 以下が目標。</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">区分</th>
+        <th style="width:11%">実践場所</th>
+        <th style="width:22%">課題</th>
+        <th style="width:33%">達成基準</th>
+        <th style="width:28%">なぜ重要</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">ティーショットで OB を打つ</td>
+        <td class="crit">持ち玉を1つ決め、Dr 10球で 持ち玉と逆方向 (OB方向) に大きく曲がるのが 0回</td>
+        <td class="why">100切りで最大のスコア漏れ。1 OB = +2打</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">ティーショットでチョロ (前に飛ばない)</td>
+        <td class="crit">Dr 10球で 150yd 以上を 10/10</td>
+        <td class="why">前進ゼロ＝ホールが終わる</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">ティーショットで大きく曲がる</td>
+        <td class="crit">Dr 10球で 持ち玉と同じ方向に曲がる球が 8/10 (=曲がる方向が安定)</td>
+        <td class="why">方向が読めれば狙いを変えられる</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-app">APPROACH</span></td>
+        <td><span class="loc loc-app">アプローチ練習場</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="ch">グリーン周りのアプローチでザックリ</td>
+        <td class="crit">
+          <strong>(練習場)</strong> 30yd ピッチ 10球で 最低限グリーン上に乗る が 8/10<br>
+          <strong>(家スポンジ)</strong> 3m 先のバケツ (直径30cm) 狙いで SW 10球中 8球がバケツ手前 ±50cm に止まる (ザックリ=手前 50cm 未満なら NG)
+        </td>
+        <td class="why">ザックリで +1〜2打。100切りの天敵。家でもコンタクト改善は可能</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-app">APPROACH</span></td>
+        <td><span class="loc loc-app">アプローチ練習場</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="ch">アプローチでトップ (グリーン奥にホームラン)</td>
+        <td class="crit">
+          <strong>(練習場)</strong> 30yd ピッチ 10球で グリーンオーバー 0回<br>
+          <strong>(家スポンジ)</strong> 3m 先のバケツ越え (トップして奥に飛ぶ) が 10球中 0回
+        </td>
+        <td class="why">トップで奥に行くとさらに難しく。家でもチェック可</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="ch">フルショットでダフリ/トップ</td>
+        <td class="crit">
+          <strong>(練習場)</strong> 7I 10球で 最低限まともに当たる (120yd 以上飛ぶ) が 8/10<br>
+          <strong>(家スポンジ)</strong> swing space があるなら 7I で 5m 先のターゲット (シーツ等) に 10球中 8球前方へクリーンに飛ぶ (チョロ/トップ 0)
+        </td>
+        <td class="why">セカンドが進まないとボギーオン不可。コンタクトは家でも改善可</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">ボギーオン用の中距離 (140yd前後) が打てない</td>
+        <td class="crit">8I 10球で 130-150yd の範囲に 7/10 (キャリーで判定)</td>
+        <td class="why">この距離が安定するとボギーオン率向上</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-bunk">BUNKER</span></td>
+        <td><span class="loc loc-bunk">バンカー練習場</span></td>
+        <td class="ch">バンカーから一発で出ない</td>
+        <td class="crit">ガードバンカーから 1打で脱出 (グリーン外でも可) が 10/8</td>
+        <td class="why">出ない = +2〜3打確定。最大級のスコア漏れ</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-home">家(パターマット)</span></td>
+        <td class="ch">1m パットを外す</td>
+        <td class="crit">ゲートドリル (パターマット 1m) 5球連続成功</td>
+        <td class="why">1m を外す = ボギーがダボに</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-green">パッティンググリーン</span></td>
+        <td class="ch">3パットを打つ (距離感が無い)</td>
+        <td class="crit">10m パット 10球で 2パット以内に収まる (=1球目が 1.5m 圏内) が 8/10</td>
+        <td class="why">3パット 1回 = +1打</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sim">SIM</span></td>
+        <td class="ch">クラブごとの平均距離が分かっていない</td>
+        <td class="crit">全クラブの中央値距離をアプリに記録した (実測 10球の中央値)</td>
+        <td class="why">距離が分からない=番手選択ミス頻発</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="ch">ホールの OB/ハザード位置を確認していない</td>
+        <td class="crit">ラウンド前にコースガイドで全ホールの OB/池/林の位置をチェックする習慣</td>
+        <td class="why">確認するだけで OB 半減</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="ch">大叩きしたホールの後、戦略を変えられない</td>
+        <td class="crit">「大叩きの次は Dr 禁止、5I ティーアップ」のような自分ルールを書き出した</td>
+        <td class="why">100切り層は崩れたら止まらない</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="meta-table">13 課題 / 打 5 ・ 寄 2 ・ 砂 1 ・ 緑 1 ・ 家マット 1 ・ 家机 2 ・ SIM (alt) 1 ・ 家スポンジ (alt) 3</p>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section>
+  <h2>90切り <span class="target-tag">CURRENT: 95-105</span></h2>
+  <p class="target-desc">ボギーオン率 70-80% を目指す段階。100切りの課題が全部解決済が前提。</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">区分</th>
+        <th style="width:11%">実践場所</th>
+        <th style="width:22%">課題</th>
+        <th style="width:33%">達成基準</th>
+        <th style="width:28%">なぜ重要</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">ティーショットの方向性 (1R で OB 1個以下)</td>
+        <td class="crit">Dr 10球で 持ち玉が ±25yd 以内 に 10/8</td>
+        <td class="why">90切りラインでは OB 1個まで</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sim">SIM</span></td>
+        <td class="ch">ティー飛距離が足りない (200yd 以下)</td>
+        <td class="crit">Dr 10球で キャリー 200yd 以上 が 7/10</td>
+        <td class="why">200yd 切るとパー4 2nd 残り過多</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">150yd 前後がグリーン狙える精度</td>
+        <td class="crit">6I or 7I 10球で 前後 ±15yd 左右 ±20yd 範囲内 が 7/10</td>
+        <td class="why">90切りの分水嶺</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">100yd ショートアイアンが乗らない</td>
+        <td class="crit">PW 10球で 100yd ±10yd 以内 が 7/10</td>
+        <td class="why">寄せワン狙う絶好の距離</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-app">APPROACH</span></td>
+        <td><span class="loc loc-app">アプローチ練習場</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="ch">30yd アプローチで 寄せワン圏外</td>
+        <td class="crit">
+          <strong>(練習場)</strong> 30yd ピッチ 10球で 3m 以内 が 6/10<br>
+          <strong>(家スポンジ)</strong> コンタクト精度の補助練習として: 3m 先のバケツに 10球中 4球入る (距離感は実距離が必要)
+        </td>
+        <td class="why">3m なら 30% は入る。家ではコンタクト訓練として有効</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-app">APPROACH</span></td>
+        <td><span class="loc loc-app">アプローチ練習場</span></td>
+        <td class="ch">ライ別 (ラフ/カラー/ベアグラウンド) の使い分けができない</td>
+        <td class="crit">3種のライから 30yd ピッチで 5m 以内 が それぞれ 10/6</td>
+        <td class="why">芝が変わると番手選択も変わる</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-bunk">BUNKER</span></td>
+        <td><span class="loc loc-bunk">バンカー練習場</span></td>
+        <td class="ch">バンカーから出して 5m 圏内</td>
+        <td class="crit">ガードバンカー 10球で 5m 以内 が 6/10</td>
+        <td class="why">1パット圏に近づける</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-home">家(パターマット)</span> <span class="loc loc-green">グリーン</span></td>
+        <td class="ch">2m パットの成功率</td>
+        <td class="crit">2m パット 10球で 7/10 成功</td>
+        <td class="why">パーセーブ・ボギー死守の境目</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-green">パッティンググリーン</span></td>
+        <td class="ch">ロングパットの距離感 (タッチ)</td>
+        <td class="crit">10m パット 10球で 1.5m 圏内に 9/10</td>
+        <td class="why">3パットを 1R 1個以下に</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">持ち玉が決まっていない (フェード or ドロー)</td>
+        <td class="crit">Dr 10球で 同じ持ち玉が 8/10 出る (結果として)</td>
+        <td class="why">持ち玉が決まらないと狙いが決まらない</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="ch">ピンを狙うか中央を狙うか判断できない</td>
+        <td class="crit">「ピン位置別の狙い方ルール」を自分で作って書き出した</td>
+        <td class="why">ピン奥につけて 3パットで崩れがち</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="ch">2nd でリスクを取らない判断 (PAR5)</td>
+        <td class="crit">「PAR5 の 2nd は 200yd 残しを目標」のような自分ルールを書き出した</td>
+        <td class="why">2オン狙って大叩きが 90切り崩しの典型</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="meta-table">12 課題 / 打 5 ・ 寄 2 ・ 砂 1 ・ 緑 2 ・ 家マット (alt) 1 ・ 家机 2 ・ SIM (alt) 1 ・ 家スポンジ (alt) 1</p>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<section>
+  <h2>80切り <span class="target-tag">CURRENT: 85-95</span></h2>
+  <p class="target-desc">パーオン率 30-40%、パーセーブが武器になる段階。100/90切りの課題が全部解決済が前提。</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:6%">区分</th>
+        <th style="width:11%">実践場所</th>
+        <th style="width:22%">課題</th>
+        <th style="width:33%">達成基準</th>
+        <th style="width:28%">なぜ重要</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">ティーショットの方向性 (FW キープ率 50%+)</td>
+        <td class="crit">Dr 10球で 持ち玉が ±20yd 以内 に 10/10</td>
+        <td class="why">FWキープが前提</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-tee">TEE</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span> <span class="loc loc-sim">SIM</span></td>
+        <td class="ch">ティーショットの飛距離 (230yd+)</td>
+        <td class="crit">Dr 10球で キャリー 230yd 以上 が 10/10</td>
+        <td class="why">230yd 切るとセカンドが難しすぎる</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">パーオン率を上げる中距離精度 (150-170yd)</td>
+        <td class="crit">6I 10球で 前後 ±10yd 左右 ±15yd 範囲内 が 9/10</td>
+        <td class="why">パーオン率 30%+ の精度</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">長距離 (180yd+) のグリーン狙い</td>
+        <td class="crit">5I or 4U 10球で 30yd 範囲内 (左右±20yd) に 8/10</td>
+        <td class="why">PAR5 で2オン狙う必須番手</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-iron">IRON</span></td>
+        <td><span class="loc loc-range">打ちっぱなし</span></td>
+        <td class="ch">100yd 以内をピンに寄せる精度</td>
+        <td class="crit">100yd ショット 10球で 5m 以内 (ピン狙いの範囲) に 8/10</td>
+        <td class="why">バーディを取りに行く距離</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-app">APPROACH</span></td>
+        <td><span class="loc loc-app">アプローチ練習場</span> <span class="loc loc-sponge">家(スポンジ)</span></td>
+        <td class="ch">寄せワン精度 (パーセーブ強化)</td>
+        <td class="crit">
+          <strong>(練習場)</strong> 30yd ピッチ 10球で 2m 以内 が 5/10、5m 以内 が 8/10<br>
+          <strong>(家スポンジ)</strong> コンタクト精度の維持: 3m バケツで 10球中 6球入る
+        </td>
+        <td class="why">寄せワン率 30%+ 必要。家でコンタクトを錆びさせない</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-bunk">BUNKER</span></td>
+        <td><span class="loc loc-bunk">バンカー練習場</span></td>
+        <td class="ch">ガードバンカーから 1パット圏</td>
+        <td class="crit">ガードバンカー 10球で 3m 以内 が 7/10</td>
+        <td class="why">サンドセーブ率を上げる</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-green">パッティンググリーン</span></td>
+        <td class="ch">3m パット成功率 (バーディ獲得)</td>
+        <td class="crit">3m パット 10球で 6/10 成功</td>
+        <td class="why">バーディチャンスを物にする</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-green">パッティンググリーン</span></td>
+        <td class="ch">ロングパットの精度 (15m から 2パット)</td>
+        <td class="crit">15m パット 10球で カップ 1.5m 以内 に 9/10</td>
+        <td class="why">3パット撲滅が必須</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-putt">PUTT</span></td>
+        <td><span class="loc loc-green">パッティンググリーン</span></td>
+        <td class="ch">傾斜の読み (スライス/フック)</td>
+        <td class="crit">傾斜のあるグリーンで自分の読みカップ位置を予測して打ち、誤差が ±1カップ以内 が 7/10</td>
+        <td class="why">読みの精度が必須</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="ch">攻めるか守るかのリスクリワード判断</td>
+        <td class="crit">「ピンが奥右、池が手前左」のような複合状況10種で 自分の狙い と理由を書き出した</td>
+        <td class="why">取るか引くかの精度が問われる</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mgmt">MGMT</span></td>
+        <td><span class="loc loc-desk">家(机上)</span></td>
+        <td class="ch">球の分布を考慮した狙い (持ち玉の散らばり)</td>
+        <td class="crit">自分の持ち玉の左右散らばりの幅を把握し、狙いを「散らばり中央」に置く設計を書き出した</td>
+        <td class="why">プロは球の散らばり中央を狙う</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mental">MENTAL</span></td>
+        <td><span class="loc loc-course">コース</span></td>
+        <td class="ch">上がり3ホールで崩れる</td>
+        <td class="crit">直近5ラウンドの 16-18番のスコア合計 と 1-15番のホール平均×3 の差が +2 以内</td>
+        <td class="why">あと一歩で崩れるパターン撲滅</td>
+      </tr>
+      <tr>
+        <td><span class="cat cat-mental">MENTAL</span></td>
+        <td><span class="loc loc-course">コース</span></td>
+        <td class="ch">ダボ叩いた後にまたダボ</td>
+        <td class="crit">直近5ラウンドで「ダボ後の次ホールがダボ+」の確率が 20% 以下</td>
+        <td class="why">連続ダボでスコア崩壊を防ぐ</td>
+      </tr>
+    </tbody>
+  </table>
+  <p class="meta-table">14 課題 / 打 5 ・ 寄 1 ・ 砂 1 ・ 緑 3 ・ 家机 2 ・ コース 2 ・ SIM (alt) 1 ・ 家スポンジ (alt) 1</p>
+</section>
+
+<section style="margin-top: 64px; padding-top: 32px; border-top: 1px solid #d5cfb8;">
+  <h2 style="font-size: 18px; border: none; padding: 0;">合計 & 場所別集計</h2>
+  <p style="font-size: 14px; color: #6b6b66;">
+    100切り 13 / 90切り 12 / 80切り 14 = <strong>計 39 課題</strong>
+  </p>
+  <p style="font-size: 13px; color: #6b6b66;">
+    <strong>主たる場所別:</strong>
+    打ちっぱなし 15 ・ アプローチ練習場 5 ・ バンカー練習場 3 ・ パッティンググリーン 6 ・
+    家(パターマット) 1 ・ 家(机上) 6 ・ コース実測のみ 2
+  </p>
+  <p style="font-size: 13px; color: #6b6b66; margin-top: 6px;">
+    <strong>代替練習として家でできるもの:</strong>
+    家(スポンジ) 5 件 (アプローチ系 3, 90切りアプローチ 1, 80切りアプローチ 1, フルショット contact 1) ・
+    シミュレーター 3 件 (飛距離計測の代替)
+  </p>
+  <p style="font-size: 13px; color: #6b6b66; margin-top: 12px;">
+    <strong>「今日この場所しか行けない」フィルタの想定:</strong><br>
+    - <strong>家しか無い夜</strong> → 家(パターマット) 1 + 家(スポンジ) 5 + 家(机上) 6 = <strong>12 課題</strong> 着手可能<br>
+    - <strong>練習場のみ</strong> → 打ちっぱなし 15 + アプローチ 5 + バンカー 3 + グリーン 6 = <strong>29 課題</strong> 着手可能<br>
+    - <strong>コース当日のみ</strong> → メンタル 2 件 (実戦でしか測れない)
+  </p>
+</section>
+
+</body>
+</html>
