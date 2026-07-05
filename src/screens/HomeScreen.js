@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Easing, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -94,6 +94,7 @@ function computeStatsFromRounds(rounds, baseline) {
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const { width: winW } = useWindowDimensions();
   const [persona, setPersona] = useState(null);
   const [rounds, setRounds] = useState([]);
   const [latestRound, setLatestRound] = useState(null);
@@ -208,7 +209,8 @@ export default function HomeScreen() {
   const spW = 170, spH = 44;
   const sMax = trend.length ? Math.max(...trend, goalScore + 2) : goalScore + 10;
   const sMin = trend.length ? Math.min(...trend, goalScore - 2) : goalScore - 5;
-  const yFor = (v) => spH - ((v - sMin) / Math.max(1, sMax - sMin)) * spH;
+  // 上=良い(スコアが低い=良い ので、低スコアほど上に描く)。展開チャートと向きを統一。
+  const yFor = (v) => ((v - sMin) / Math.max(1, sMax - sMin)) * spH;
   const pts = trend.map((v, i) => ({
     x: (i / Math.max(1, trend.length - 1)) * spW,
     y: yFor(v), v,
@@ -317,9 +319,39 @@ export default function HomeScreen() {
   // Test result for Home card — 実際に受けたテストの合格ラインを優先
   const targetPct = testResult?.target ?? 60;
 
+  // ─ スコア推移の展開アニメ (iOS=引っ張り+タップ / Android=タップのみ) ─
+  const canExpand = trend.length >= 2;
+  const [expanded, setExpanded] = useState(false);
+  const expandAnim = useRef(new Animated.Value(0)).current;
+  const expandedRef = useRef(false);
+  const toggleExpand = (v) => {
+    if (!canExpand) return;
+    const nv = typeof v === 'boolean' ? v : !expandedRef.current;
+    if (nv === expandedRef.current) return;
+    expandedRef.current = nv;
+    setExpanded(nv);
+    Animated.spring(expandAnim, { toValue: nv ? 1 : 0, useNativeDriver: false, friction: 10, tension: 55 }).start();
+  };
+  const onScroll = (e) => {
+    if (Platform.OS !== 'ios' || !canExpand) return;
+    const y = e.nativeEvent.contentOffset.y;
+    if (!expandedRef.current && y < -62) toggleExpand(true);
+    else if (expandedRef.current && y > 44) toggleExpand(false);
+  };
+
+  const COLLAPSED_H = 58, EXPANDED_H = 300;
+  const containerH = expandAnim.interpolate({ inputRange: [0, 1], outputRange: [COLLAPSED_H, EXPANDED_H] });
+  const collapsedOpacity = expandAnim.interpolate({ inputRange: [0, 0.35], outputRange: [1, 0], extrapolate: 'clamp' });
+  const expandedOpacity = expandAnim.interpolate({ inputRange: [0.45, 1], outputRange: [0, 1], extrapolate: 'clamp' });
+  const chevRotate = expandAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
+  const chartW = winW - 40;
+  const roundCount = roundScores.length;
+  const remainingToGoal = Math.max(0, Math.round(avgScore) - goalScore);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }} edges={['top']}>
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}
+      onScroll={onScroll} scrollEventThrottle={16}>
       <View style={styles.topBar}>
         <Pressable onPress={() => onNavigate('settings')} hitSlop={12} style={styles.gearBtn}>
           <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
@@ -331,68 +363,103 @@ export default function HomeScreen() {
       </View>
 
       <View style={{ marginTop: 4 }}>
-        <Text style={styles.label}>ベストスコア</Text>
-        <View style={styles.bestRow}>
-          <View style={styles.bestLeft}>
-            <Text style={styles.bestNum}>{best}</Text>
-            <Text style={styles.bestAvg}>ave. {Math.round(avgScore)}</Text>
-          </View>
-          <View style={styles.sparkWrap}>
-            {trend.length >= 2 ? (
-              <Animated.View style={{ width: '100%', opacity: sparkOpacity, transform: [{ translateY: sparkY }] }}>
-                <Svg width="100%" height={spH + 10} viewBox={`0 -10 ${spW} ${spH + 16}`} preserveAspectRatio="none">
-                  <Line x1={0} x2={spW} y1={goalY} y2={goalY} stroke={theme.textTer} strokeDasharray="2 3" strokeWidth={0.7}/>
-                  <SvgText x={spW} y={goalY - 3} fontSize={7} fill={theme.textTer} textAnchor="end" fontFamily={FONT.mono}>目標 {goalScore}</SvgText>
-                  <AnimatedPath
-                    d={pathD}
-                    fill="none" stroke={theme.text}
-                    strokeWidth={1.3}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray={pathLen}
-                    strokeDashoffset={lineDraw.interpolate({ inputRange: [0, 1], outputRange: [pathLen, 0] })}
-                  />
-                  {pts.map((pt, i) => (i === bestIdx || i === latestIdx) ? null : (
-                    <AnimatedCircle key={i} cx={pt.x} cy={pt.y} r={1.5} fill={theme.bg} stroke={theme.text} strokeWidth={1} opacity={dotsOpacity}/>
-                  ))}
-                  {/* BEST — expanding halo (bloom) */}
-                  {bestIdx >= 0 && (
-                    <AnimatedCircle
-                      cx={pts[bestIdx].x} cy={pts[bestIdx].y}
-                      r={bloomR}
-                      fill={BEST_SOFT}
-                      opacity={bloomOpacity}
-                    />
-                  )}
-                  {/* BEST — gold dot scale-popping in */}
-                  {bestIdx >= 0 && (
-                    <AnimatedCircle
-                      cx={pts[bestIdx].x} cy={pts[bestIdx].y}
-                      r={bestR}
-                      fill={BEST_SOFT} stroke={BEST_DOT} strokeWidth={0.8}
-                      opacity={bestOpacity}
-                    />
-                  )}
-                  {/* LATEST — ping ring (only when latest is not the best) */}
-                  {latestIdx >= 0 && latestIdx !== bestIdx && (
-                    <AnimatedCircle
-                      cx={pts[latestIdx].x} cy={pts[latestIdx].y}
-                      r={pingR}
-                      fill="none" stroke={theme.text} strokeWidth={1.2}
-                      opacity={pingOpacity}
-                    />
-                  )}
-                  {/* LATEST — solid dot */}
-                  {latestIdx >= 0 && latestIdx !== bestIdx && (
-                    <Circle cx={pts[latestIdx].x} cy={pts[latestIdx].y} r={2.4} fill={theme.text} stroke={theme.bg} strokeWidth={1}/>
-                  )}
-                </Svg>
+        {!canExpand ? (
+          <>
+            <Text style={styles.label}>ベストスコア</Text>
+            <View style={[styles.bestRow, { marginTop: 10 }]}>
+              <View style={styles.bestLeft}>
+                <Text style={styles.bestNum}>{best}</Text>
+                <Text style={styles.bestAvg}>ave. {Math.round(avgScore)}</Text>
+              </View>
+              <View style={styles.sparkWrap}>
+                <Text style={styles.sparkEmpty}>ラウンドを{'\n'}記録すると{'\n'}推移が出る</Text>
+              </View>
+            </View>
+          </>
+        ) : (
+          <Pressable onPress={() => toggleExpand()}>
+            <View style={styles.scoreLabelRow}>
+              <Text style={styles.label}>ベストスコア</Text>
+              <View style={styles.expandHint}>
+                <Text style={styles.expandHintText}>推移</Text>
+                <Animated.View style={{ transform: [{ rotate: chevRotate }] }}>
+                  <Svg width={13} height={13} viewBox="0 0 24 24">
+                    <Path d="M6 9l6 6 6-6" stroke={theme.textTer} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                  </Svg>
+                </Animated.View>
+              </View>
+            </View>
+
+            <Animated.View style={{ height: containerH, overflow: 'hidden', marginTop: 6 }}>
+              {/* ── 折りたたみ (スコア + 小スパークライン) ── */}
+              <Animated.View style={[styles.absFill, { opacity: collapsedOpacity }]}>
+                <View style={styles.bestRow}>
+                  <View style={styles.bestLeft}>
+                    <Text style={styles.bestNum}>{best}</Text>
+                    <Text style={styles.bestAvg}>ave. {Math.round(avgScore)}</Text>
+                  </View>
+                  <View style={styles.sparkWrap}>
+                    <Animated.View style={{ width: '100%', opacity: sparkOpacity, transform: [{ translateY: sparkY }] }}>
+                      <Svg width="100%" height={spH + 10} viewBox={`0 -10 ${spW} ${spH + 16}`} preserveAspectRatio="none">
+                        <Line x1={0} x2={spW} y1={goalY} y2={goalY} stroke={theme.textTer} strokeDasharray="2 3" strokeWidth={0.7}/>
+                        <SvgText x={spW} y={goalY - 3} fontSize={7} fill={theme.textTer} textAnchor="end" fontFamily={FONT.mono}>目標 {goalScore}</SvgText>
+                        <AnimatedPath
+                          d={pathD} fill="none" stroke={theme.text} strokeWidth={1.3}
+                          strokeLinecap="round" strokeLinejoin="round"
+                          strokeDasharray={pathLen}
+                          strokeDashoffset={lineDraw.interpolate({ inputRange: [0, 1], outputRange: [pathLen, 0] })}
+                        />
+                        {pts.map((pt, i) => (i === bestIdx || i === latestIdx) ? null : (
+                          <AnimatedCircle key={i} cx={pt.x} cy={pt.y} r={1.5} fill={theme.bg} stroke={theme.text} strokeWidth={1} opacity={dotsOpacity}/>
+                        ))}
+                        {bestIdx >= 0 && (
+                          <AnimatedCircle cx={pts[bestIdx].x} cy={pts[bestIdx].y} r={bloomR} fill={BEST_SOFT} opacity={bloomOpacity}/>
+                        )}
+                        {bestIdx >= 0 && (
+                          <AnimatedCircle cx={pts[bestIdx].x} cy={pts[bestIdx].y} r={bestR} fill={BEST_SOFT} stroke={BEST_DOT} strokeWidth={0.8} opacity={bestOpacity}/>
+                        )}
+                        {latestIdx >= 0 && latestIdx !== bestIdx && (
+                          <AnimatedCircle cx={pts[latestIdx].x} cy={pts[latestIdx].y} r={pingR} fill="none" stroke={theme.text} strokeWidth={1.2} opacity={pingOpacity}/>
+                        )}
+                        {latestIdx >= 0 && latestIdx !== bestIdx && (
+                          <Circle cx={pts[latestIdx].x} cy={pts[latestIdx].y} r={2.4} fill={theme.text} stroke={theme.bg} strokeWidth={1}/>
+                        )}
+                      </Svg>
+                    </Animated.View>
+                  </View>
+                </View>
               </Animated.View>
-            ) : (
-              <Text style={styles.sparkEmpty}>ラウンドを{'\n'}記録すると{'\n'}推移が出る</Text>
-            )}
-          </View>
-        </View>
+
+              {/* ── 展開 (大チャート + 統計) ── */}
+              <Animated.View style={[styles.absFill, { opacity: expandedOpacity }]} pointerEvents={expanded ? 'auto' : 'none'}>
+                <View style={styles.heroRow}>
+                  <Text style={styles.bestNum}>{best}</Text>
+                  <Text style={styles.bestAvg}>ベスト</Text>
+                </View>
+                <ExpandedScoreChart
+                  width={chartW} trend={trend} sMin={sMin} sMax={sMax}
+                  goalScore={goalScore}
+                />
+                <View style={styles.statsRow}>
+                  <View style={styles.statCell}>
+                    <Text style={styles.statBig}>{Math.round(avgScore)}</Text>
+                    <Text style={styles.statLbl}>平均</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statCell}>
+                    <Text style={styles.statBig}>{roundCount}</Text>
+                    <Text style={styles.statLbl}>ラウンド</Text>
+                  </View>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statCell}>
+                    <Text style={styles.statBig}>{remainingToGoal > 0 ? `あと${remainingToGoal}` : '達成'}</Text>
+                    <Text style={styles.statLbl}>目標 {goalScore} まで</Text>
+                  </View>
+                </View>
+              </Animated.View>
+            </Animated.View>
+          </Pressable>
+        )}
       </View>
 
       <View style={{ marginTop: 20 }}>
@@ -536,8 +603,45 @@ function MetricCell({ k, cur, tgt, reverse, onPress, delay = 0 }) {
   );
 }
 
+// ─── 展開時の大きなスコア推移チャート ───
+const GOLD = '#D49622', GOLD_SOFT = '#E5A83A';
+function ExpandedScoreChart({ width, trend, sMin, sMax, goalScore }) {
+  const H = 176;
+  const padL = 8, padR = 12, padT = 22, padB = 24;
+  const innerW = Math.max(1, width - padL - padR);
+  const innerH = H - padT - padB;
+  const range = Math.max(1, sMax - sMin);
+  const yFor = (v) => padT + ((v - sMin) / range) * innerH;   // 上=良い(低スコア)
+  const xFor = (i) => padL + (i / Math.max(1, trend.length - 1)) * innerW;
+  const pts = trend.map((v, i) => ({ x: xFor(i), y: yFor(v), v }));
+  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const goalY = yFor(goalScore);
+  const bestVal = Math.min(...trend);
+  const worstVal = Math.max(...trend);
+  const bestIdx = trend.indexOf(bestVal);
+  const latestIdx = trend.length - 1;
+  const bestLabelX = Math.max(padL + 18, Math.min(width - padR - 18, pts[bestIdx].x));
+
+  return (
+    <Svg width={width} height={H}>
+      <Line x1={padL} x2={width - padR} y1={goalY} y2={goalY} stroke={theme.textTer} strokeDasharray="3 4" strokeWidth={1}/>
+      <SvgText x={width - padR} y={goalY - 5} fontSize={9} fill={theme.textTer} textAnchor="end" fontFamily={FONT.mono}>目標 {goalScore}</SvgText>
+      <Path d={pathD} fill="none" stroke={theme.text} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>
+      {pts.map((p, i) => (i === bestIdx || i === latestIdx) ? null : (
+        <Circle key={i} cx={p.x} cy={p.y} r={2.5} fill={theme.bg} stroke={theme.text} strokeWidth={1.4}/>
+      ))}
+      {latestIdx !== bestIdx && (
+        <Circle cx={pts[latestIdx].x} cy={pts[latestIdx].y} r={3.6} fill={theme.text} stroke={theme.bg} strokeWidth={1.5}/>
+      )}
+      <Circle cx={pts[bestIdx].x} cy={pts[bestIdx].y} r={5} fill={GOLD_SOFT} stroke={GOLD} strokeWidth={1.5}/>
+      <SvgText x={bestLabelX} y={pts[bestIdx].y - 12} fontSize={10} fill={GOLD} textAnchor="middle" fontFamily={FONT.mono} fontWeight="700">{bestVal} BEST</SvgText>
+      <SvgText x={padL} y={H - 7} fontSize={9} fill={theme.textTer} fontFamily={FONT.mono}>{worstVal}</SvgText>
+      <SvgText x={width - padR} y={H - 7} fontSize={9} fill={theme.textTer} textAnchor="end" fontFamily={FONT.mono}>直近 {trend.length} ラウンド ↑良い</SvgText>
+    </Svg>
+  );
+}
+
 // ─── 基準クリア進捗カード（積み上がりの可視化）───
-const GOLD = '#D49622';
 function ProgressCard({ progress, onPress }) {
   const fade = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(8)).current;
@@ -699,12 +803,23 @@ const styles = StyleSheet.create({
   topBar: { paddingTop: 8, paddingBottom: 2, flexDirection: 'row', justifyContent: 'flex-end' },
   gearBtn: { padding: 6 },
   label: { fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.8, fontWeight: '500' },
-  bestRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, gap: 14 },
+  bestRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14 },
   bestLeft: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   bestNum: { fontFamily: FONT.mono, fontSize: 44, fontWeight: '400', color: theme.text, letterSpacing: -1.6, lineHeight: 50 },
   bestAvg: { fontFamily: FONT.mono, fontSize: 12, color: theme.textSec, letterSpacing: 0.3 },
   sparkWrap: { flex: 1, maxWidth: 180, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   sparkEmpty: { fontFamily: FONT.mono, fontSize: 9, color: theme.textTer, textAlign: 'center', letterSpacing: 0.3, lineHeight: 14 },
+  // スコア推移 展開
+  scoreLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  expandHint: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  expandHintText: { fontFamily: FONT.mono, fontSize: 9, color: theme.textTer, letterSpacing: 0.6 },
+  absFill: { position: 'absolute', left: 0, right: 0, top: 0 },
+  heroRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
+  statsRow: { flexDirection: 'row', marginTop: 10, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.border },
+  statCell: { flex: 1, alignItems: 'center' },
+  statDivider: { width: StyleSheet.hairlineWidth, backgroundColor: theme.border },
+  statBig: { fontFamily: FONT.mono, fontSize: 21, fontWeight: '500', color: theme.text, letterSpacing: -0.5 },
+  statLbl: { fontSize: 10.5, color: theme.textSec, marginTop: 3 },
   latestRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginTop: 8 },
   latestScore: { fontFamily: FONT.mono, fontSize: 22, fontWeight: '500', letterSpacing: -0.6, color: theme.text },
   latestDiff: { fontFamily: FONT.mono, fontSize: 12 },
