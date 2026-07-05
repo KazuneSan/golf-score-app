@@ -223,13 +223,15 @@ export default function RoundScreen() {
         </View>
       </SafeAreaView>
 
-      {/* DEV */}
-      <View style={styles.devBar}>
-        <Text style={styles.devLabel}>DEV</Text>
-        <View style={{ flex: 1 }} />
-        <Pressable onPress={debugFillAll} style={styles.devFillBtn}><Text style={styles.devFillText}>全ホール一括入力</Text></Pressable>
-        <Pressable onPress={debugClearAll} style={styles.devClearBtn}><Text style={styles.devClearText}>クリア</Text></Pressable>
-      </View>
+      {/* DEV — 開発ビルドのみ表示 (本番/TestFlight/審査では非表示) */}
+      {__DEV__ && (
+        <View style={styles.devBar}>
+          <Text style={styles.devLabel}>DEV</Text>
+          <View style={{ flex: 1 }} />
+          <Pressable onPress={debugFillAll} style={styles.devFillBtn}><Text style={styles.devFillText}>全ホール一括入力</Text></Pressable>
+          <Pressable onPress={debugClearAll} style={styles.devClearBtn}><Text style={styles.devClearText}>クリア</Text></Pressable>
+        </View>
+      )}
 
       {/* Running total */}
       <View style={styles.runRow}>

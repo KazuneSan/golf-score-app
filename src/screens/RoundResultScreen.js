@@ -241,14 +241,17 @@ export default function RoundResultScreen() {
 
         {/* Actions */}
         <View style={{ marginTop: 22, gap: 8 }}>
-          <Pressable onPress={() => setShowScorecard(true)} style={styles.scBtn}>
-            <Svg width={15} height={15} viewBox="0 0 16 16" fill="none">
-              <Path d="M2 3 h12 v10 h-12 z" stroke={theme.text} strokeWidth={1.4} fill="none"/>
-              <Path d="M6 7 a1.2 1.2 0 1 0 2.4 0 a1.2 1.2 0 1 0 -2.4 0" fill={theme.text}/>
-              <Path d="M2 11l3-3 3 3 2-2 4 4" stroke={theme.text} strokeWidth={1.4} strokeLinejoin="round" fill="none"/>
-            </Svg>
-            <Text style={styles.scBtnText}>スコアカードを作成 · シェア</Text>
-          </Pressable>
+          {/* スコアカード共有は画像生成の実装後に公開する。開発ビルドのみ表示。 */}
+          {__DEV__ && (
+            <Pressable onPress={() => setShowScorecard(true)} style={styles.scBtn}>
+              <Svg width={15} height={15} viewBox="0 0 16 16" fill="none">
+                <Path d="M2 3 h12 v10 h-12 z" stroke={theme.text} strokeWidth={1.4} fill="none"/>
+                <Path d="M6 7 a1.2 1.2 0 1 0 2.4 0 a1.2 1.2 0 1 0 -2.4 0" fill={theme.text}/>
+                <Path d="M2 11l3-3 3 3 2-2 4 4" stroke={theme.text} strokeWidth={1.4} strokeLinejoin="round" fill="none"/>
+              </Svg>
+              <Text style={styles.scBtnText}>スコアカードを作成 · シェア</Text>
+            </Pressable>
+          )}
           <Pressable onPress={finish} style={styles.finishBtn}>
             <Text style={styles.finishText}>完了して保存</Text>
           </Pressable>
