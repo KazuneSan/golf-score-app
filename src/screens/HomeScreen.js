@@ -8,6 +8,7 @@ import { getLatestRound, getAllRounds } from '../data/rounds';
 import { getPersona, PERSONA_PROFILES, metricToChallenge, focusToChallenge } from '../data/persona';
 import { getBestTestResult } from '../data/testResults';
 import { getDrillsForChallenge } from '../data/drillDetails';
+import { getProgress } from '../data/progress';
 import { pickTip } from '../data/tips';
 
 const theme = THEMES.light;
@@ -97,6 +98,7 @@ export default function HomeScreen() {
   const [rounds, setRounds] = useState([]);
   const [latestRound, setLatestRound] = useState(null);
   const [testResult, setTestResult] = useState(null);
+  const [progress, setProgress] = useState(null);
   const [now, setNow] = useState(Date.now());
 
   useFocusEffect(
@@ -121,6 +123,9 @@ export default function HomeScreen() {
         const primaryCh = focusToChallenge(primaryFocus, personaKey) || 'putt-1m-100';
         const best = await getBestTestResult(primaryCh);
         if (active) setTestResult(best);
+
+        const prog = await getProgress(personaKey);
+        if (active) setProgress(prog);
       })();
       return () => { active = false; };
     }, [])
@@ -426,6 +431,9 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
+      {/* 基準クリア進捗 — morupi のコア価値 */}
+      <ProgressCard progress={progress} onPress={() => onNavigate('practice')} />
+
       {/* 注力課題のテスト結果 */}
       <TestResultCard
         testResult={testResult}
@@ -523,6 +531,66 @@ function MetricCell({ k, cur, tgt, reverse, onPress, delay = 0 }) {
         <Text style={[styles.metricTarget, { color: ok ? theme.good : theme.textTer }]}>
           {ok ? '目標達成' : `目標 ${dispTgt}${meta.unit}`}
         </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+// ─── 基準クリア進捗カード（積み上がりの可視化）───
+const GOLD = '#D49622';
+function ProgressCard({ progress, onPress }) {
+  const fade = useRef(new Animated.Value(0)).current;
+  const rise = useRef(new Animated.Value(8)).current;
+  const barFill = useRef(new Animated.Value(0)).current;
+
+  const cleared = progress?.clearedInLevel ?? 0;
+  const total = progress?.totalInLevel ?? 0;
+  const frac = total > 0 ? cleared / total : 0;
+
+  useEffect(() => {
+    fade.setValue(0);
+    rise.setValue(8);
+    barFill.setValue(0);
+    Animated.parallel([
+      Animated.timing(fade, { toValue: 1, duration: FADE_DURATION, delay: 120, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
+      Animated.timing(rise, { toValue: 0, duration: FADE_DURATION, delay: 120, useNativeDriver: true, easing: Easing.out(Easing.cubic) }),
+      Animated.timing(barFill, { toValue: 1, duration: FILL_DURATION, delay: 300, useNativeDriver: false, easing: Easing.out(Easing.cubic) }),
+    ]).start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleared, total]);
+
+  if (!progress) return null;
+
+  const remaining = Math.max(0, total - cleared);
+  const sub = cleared === 0
+    ? '最初の基準クリアを目指そう'
+    : remaining === 0
+      ? `${progress.levelLabel}の基準をすべてクリア`
+      : `コンプリートまで あと ${remaining} 個`;
+
+  return (
+    <Animated.View style={{ opacity: fade, transform: [{ translateY: rise }], marginTop: 20 }}>
+      <Pressable onPress={onPress} style={styles.progCard}>
+        <View style={styles.progTop}>
+          <Text style={styles.label}>基準クリア · {progress.levelLabel}</Text>
+          {progress.thisMonth > 0 && (
+            <Text style={styles.progMonth}>今月 +{progress.thisMonth}</Text>
+          )}
+        </View>
+        <View style={styles.progValRow}>
+          <Text style={styles.progNum}>{cleared}</Text>
+          <Text style={styles.progDen}>/ {total} クリア</Text>
+        </View>
+        <View style={styles.progBar}>
+          <Animated.View style={[
+            styles.progBarFill,
+            {
+              backgroundColor: GOLD,
+              width: barFill.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${Math.round(frac * 100)}%`] }),
+            },
+          ]} />
+        </View>
+        <Text style={styles.progSub}>{sub}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -651,6 +719,16 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: theme.bg, fontSize: 12.5, fontWeight: '500' },
   btnSecondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.borderStrong, paddingVertical: 11, borderRadius: 6, alignItems: 'center' },
   btnSecondaryText: { color: theme.text, fontSize: 12.5, fontWeight: '500' },
+  // 基準クリア進捗カード
+  progCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 14, backgroundColor: theme.surface },
+  progTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  progMonth: { fontFamily: FONT.mono, fontSize: 10, color: GOLD, fontWeight: '700', letterSpacing: 0.3 },
+  progValRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginTop: 8 },
+  progNum: { fontFamily: FONT.mono, fontSize: 32, fontWeight: '500', color: theme.text, letterSpacing: -1, lineHeight: 34 },
+  progDen: { fontFamily: FONT.mono, fontSize: 13, color: theme.textSec },
+  progBar: { height: 6, backgroundColor: theme.surfaceAlt, borderRadius: 3, marginTop: 10, overflow: 'hidden' },
+  progBarFill: { height: '100%', borderRadius: 3 },
+  progSub: { fontSize: 11.5, color: theme.textSec, marginTop: 8 },
   testCard: { borderWidth: 1, borderColor: theme.border, borderRadius: 8, padding: 14, backgroundColor: theme.surface },
   testHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 6 },
   testMetric: { fontSize: 15, fontWeight: '600', letterSpacing: -0.2, color: theme.text },

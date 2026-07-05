@@ -9,6 +9,7 @@ import { getDrillsForChallenge, getDrillDetail, DRILL_DETAILS } from '../data/dr
 import { getFavorites } from '../data/favorites';
 import { getAllPracticeRounds } from '../data/rounds';
 import { getChallenge } from '../data/challenges';
+import { getClearedChallengeKeys } from '../data/progress';
 
 const theme = THEMES.light;
 
@@ -53,6 +54,7 @@ export default function PracticeScreen() {
   const navigation = useNavigation();
   const [favs, setFavs] = useState([]);
   const [practiceRounds, setPracticeRounds] = useState([]);
+  const [cleared, setCleared] = useState(() => new Set());
   const [levelFilter, setLevelFilter] = useState(null);
   const [catFilter, setCatFilter] = useState(null);
   const [query, setQuery] = useState('');
@@ -61,6 +63,7 @@ export default function PracticeScreen() {
     useCallback(() => {
       getFavorites().then(setFavs);
       getAllPracticeRounds().then(setPracticeRounds);
+      getClearedChallengeKeys().then(setCleared);
     }, [])
   );
   const goDrills = (k) => navigation.navigate('DrillList', { challengeKey: k });
@@ -177,7 +180,7 @@ export default function PracticeScreen() {
               <View style={{ marginTop: 4, gap: 8 }}>
                 {filteredChallenges.map((c, i) => (
                   <ChallengeRow key={c.k} c={c} onPress={() => goDrills(c.k)} first={i === 0}
-                    showLevel={levelFilter === null} />
+                    showLevel={levelFilter === null} cleared={cleared.has(c.k)} />
                 ))}
               </View>
             )}
@@ -187,14 +190,14 @@ export default function PracticeScreen() {
             <Text style={[styles.label, { marginTop: 4 }]}>最近取り組んだ課題</Text>
             <View style={{ marginTop: 8, gap: 8 }}>
               {RECENT_CH.map((c, i) => (
-                <ChallengeRow key={c.k} c={c} onPress={() => goDrills(c.k)} first={i === 0} />
+                <ChallengeRow key={c.k} c={c} onPress={() => goDrills(c.k)} first={i === 0} cleared={cleared.has(c.k)} />
               ))}
             </View>
 
             <Text style={[styles.label, { marginTop: 18 }]}>その他の課題</Text>
             <View style={{ marginTop: 8, gap: 8 }}>
               {OTHER_CH.map((c, i) => (
-                <ChallengeRow key={c.k} c={c} onPress={() => goDrills(c.k)} first={i === 0} />
+                <ChallengeRow key={c.k} c={c} onPress={() => goDrills(c.k)} first={i === 0} cleared={cleared.has(c.k)} />
               ))}
             </View>
           </>
@@ -258,12 +261,22 @@ export default function PracticeScreen() {
   );
 }
 
-function ChallengeRow({ c, onPress, first, showLevel = false }) {
+function ChallengeRow({ c, onPress, first, showLevel = false, cleared = false }) {
   const drillCount = getDrillsForChallenge(c.k).length;
   return (
     <Pressable onPress={onPress} style={styles.chRow}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.chLabel}>{c.label}</Text>
+        <View style={styles.chLabelRow}>
+          {cleared && (
+            <View style={styles.clearMark}>
+              <Svg width={9} height={9} viewBox="0 0 12 12">
+                <Path d="M2 6 L 5 9 L 10 3" stroke="#fff" strokeWidth={2} fill="none"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </View>
+          )}
+          <Text style={styles.chLabel}>{c.label}</Text>
+        </View>
         <View style={styles.chSubRow}>
           {showLevel && (
             <View style={styles.levelBadge}>
@@ -324,7 +337,9 @@ const styles = StyleSheet.create({
   emptyFilter: { fontSize: 13, color: theme.textSec, textAlign: 'center', marginTop: 32 },
   // Challenge row
   chRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 6, backgroundColor: theme.surface, gap: 10 },
-  chLabel: { fontSize: 14, fontWeight: '600', color: theme.text, letterSpacing: -0.1 },
+  chLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  chLabel: { fontSize: 14, fontWeight: '600', color: theme.text, letterSpacing: -0.1, flexShrink: 1 },
+  clearMark: { width: 15, height: 15, borderRadius: 7.5, backgroundColor: '#D49622', alignItems: 'center', justifyContent: 'center' },
   chSubRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 5 },
   chSub: { fontSize: 11, color: theme.textSec, flex: 1 },
   chMeta: { fontFamily: FONT.mono, fontSize: 11, color: theme.text, fontWeight: '500' },
