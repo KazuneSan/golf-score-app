@@ -320,23 +320,82 @@ export default function HomeScreen() {
   const targetPct = testResult?.target ?? 60;
 
   // ─ スコア推移の展開アニメ (iOS=引っ張り+タップ / Android=タップのみ) ─
+  // iOS はオーバースクロール量に 1:1 で追従させ(rubber band)、
+  // 指を離した時に進捗が COMMIT_AT 以上なら展開確定、未満ならスクロールの
+  // バウンス物理に同期して自然に戻す。離散トリガーだと指に追従せずカクつく。
   const canExpand = trend.length >= 2;
   const [expanded, setExpanded] = useState(false);
   const expandAnim = useRef(new Animated.Value(0)).current;
   const expandedRef = useRef(false);
+  const pullingRef = useRef(false);
+  const progressRef = useRef(0);
+
+  const PULL_DISTANCE = 110;  // 全展開に必要な引っ張り距離(pt)
+  const COMMIT_AT = 0.5;      // 指を離した時にこの進捗以上なら展開確定
+
+  const settle = (to, fast = false) => {
+    Animated.timing(expandAnim, {
+      toValue: to,
+      duration: fast ? 240 : 430,
+      easing: Easing.bezier(0.22, 1, 0.36, 1), // 滑らかな減速 (easeOutQuint 系)
+      useNativeDriver: false,
+    }).start(() => { progressRef.current = to; });
+  };
+
+  const setExpandedState = (nv) => {
+    expandedRef.current = nv;
+    setExpanded(nv);
+  };
+
   const toggleExpand = (v) => {
     if (!canExpand) return;
     const nv = typeof v === 'boolean' ? v : !expandedRef.current;
     if (nv === expandedRef.current) return;
-    expandedRef.current = nv;
-    setExpanded(nv);
-    Animated.spring(expandAnim, { toValue: nv ? 1 : 0, useNativeDriver: false, friction: 10, tension: 55 }).start();
+    setExpandedState(nv);
+    settle(nv ? 1 : 0);
   };
+
   const onScroll = (e) => {
     if (Platform.OS !== 'ios' || !canExpand) return;
     const y = e.nativeEvent.contentOffset.y;
-    if (!expandedRef.current && y < -62) toggleExpand(true);
-    else if (expandedRef.current && y > 44) toggleExpand(false);
+    if (!expandedRef.current) {
+      if (y < 0) {
+        // 引っ張りに 1:1 追従。戻りもスクロールのバウンス物理にそのまま同期する
+        pullingRef.current = true;
+        const p = Math.min(1, -y / PULL_DISTANCE);
+        progressRef.current = p;
+        expandAnim.setValue(p);
+      } else if (pullingRef.current) {
+        pullingRef.current = false;
+        progressRef.current = 0;
+        expandAnim.setValue(0);
+      }
+    } else if (y > 44) {
+      // 展開中に下へスクロールしたら畳む
+      setExpandedState(false);
+      settle(0, true);
+    }
+  };
+
+  const onScrollEndDrag = () => {
+    if (Platform.OS !== 'ios' || !canExpand || expandedRef.current) return;
+    if (!pullingRef.current) return;
+    if (progressRef.current >= COMMIT_AT) {
+      // 確定: バウンス追従を止めて 1 へ滑らかに送る
+      pullingRef.current = false;
+      setExpandedState(true);
+      settle(1);
+    }
+    // 未達の場合は何もしない → バウンス戻りに追従して自然に 0 へ帰る
+  };
+
+  const onMomentumScrollEnd = () => {
+    // 安全網: 追従が中途半端な値で止まっていたら 0 に戻す
+    if (Platform.OS !== 'ios' || expandedRef.current) return;
+    if (progressRef.current > 0 && progressRef.current < 1) {
+      pullingRef.current = false;
+      settle(0, true);
+    }
   };
 
   const COLLAPSED_H = 58, EXPANDED_H = 300;
