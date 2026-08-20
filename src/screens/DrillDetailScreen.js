@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Easing, Image, FlatList, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Easing, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path, Rect, Circle, Ellipse, Line, Text as SvgText, G, Polygon, LinearGradient, Defs, Stop, ClipPath } from 'react-native-svg';
@@ -12,56 +12,22 @@ import SwingDrillAnimation from '../components/SwingDrillAnimation';
 
 const theme = THEMES.light;
 
-// ── ゲートドリル: 静止画カルーセル ──
-const GATE_STEPS = [
-  require('../../assets/drills/gate-step-1.png'),
-  require('../../assets/drills/gate-step-2.png'),
-  require('../../assets/drills/gate-step-3.png'),
-  require('../../assets/drills/gate-step-4.png'),
-  require('../../assets/drills/gate-step-5.png'),
-];
-const GATE_IMG_W = 269;  // 切り出し後の幅
-const GATE_IMG_H = 714;  // 切り出し後の高さ
-const GATE_IMG_AR = GATE_IMG_W / GATE_IMG_H; // 約0.377
+// ── ドリル解説漫画（4コマ・1ドリル1枚）──
+// 生成方法と守るべきルールは Notion「イラスト発注仕様」を参照。
+// 画像は 1122 × 1402 (4:5) で ChatGPT が出力したものを WebP 変換して同梱する。
+const DRILL_MANGA = {
+  p1: require('../../assets/drills/gate-drill.webp'),
+};
+const MANGA_AR = 1122 / 1402;   // 縦長 4:5
 
-function GateCarousel() {
-  const { width: winW } = useWindowDimensions();
-  const slideW = winW - 32; // 16px の左右マージン
-  // 画像は縦長なので、画面に収まる適切な高さに調整
-  const imgH = Math.min(slideW / GATE_IMG_AR, 520); // 最大520px
-  const imgW = imgH * GATE_IMG_AR;
-  const [page, setPage] = useState(0);
-
+function DrillManga({ source }) {
   return (
-    <View style={styles.gateCarouselWrap}>
-      <FlatList
-        data={GATE_STEPS}
-        horizontal
-        pagingEnabled
-        snapToInterval={slideW}
-        decelerationRate="fast"
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={e => {
-          const i = Math.round(e.nativeEvent.contentOffset.x / slideW);
-          setPage(i);
-        }}
-        keyExtractor={(_, i) => String(i)}
-        renderItem={({ item }) => (
-          <View style={[styles.gateSlide, { width: slideW }]}>
-            <Image source={item} style={{ width: imgW, height: imgH }} resizeMode="contain" />
-          </View>
-        )}
+    <View style={styles.mangaWrap}>
+      <Image
+        source={source}
+        style={{ width: '100%', aspectRatio: MANGA_AR }}
+        resizeMode="contain"
       />
-      {/* ページドット */}
-      <View style={styles.gateDots}>
-        {GATE_STEPS.map((_, i) => (
-          <View
-            key={i}
-            style={[styles.gateDot, i === page && styles.gateDotActive]}
-          />
-        ))}
-      </View>
-      <Text style={styles.gateHint}>{page + 1} / {GATE_STEPS.length}  ·  ← スワイプ →</Text>
     </View>
   );
 }
@@ -982,10 +948,9 @@ export default function DrillDetailScreen() {
           {drill.purpose && <Text style={styles.purpose}>{drill.purpose}</Text>}
         </View>
 
-        {/* Diagram */}
-        {drill.setup === 'gate' ? (
-          /* gate は静止画カルーセル（5ステップ） */
-          <GateCarousel />
+        {/* Diagram — 漫画があればそれを使い、無ければ従来の SVG にフォールバック */}
+        {DRILL_MANGA[drill.id] ? (
+          <DrillManga source={DRILL_MANGA[drill.id]} />
         ) : (
           <View style={styles.diagramWrap}>
             <View style={[
@@ -1099,12 +1064,7 @@ const styles = StyleSheet.create({
   diagramWrap: { marginHorizontal: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 8, overflow: 'hidden', backgroundColor: theme.surface },
   diagramBody: { aspectRatio: 320 / 260, backgroundColor: theme.surfaceAlt },
   // gate carousel
-  gateCarouselWrap: { marginBottom: 14 },
-  gateSlide: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8 },
-  gateDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 6 },
-  gateDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: theme.border },
-  gateDotActive: { backgroundColor: theme.text, width: 18 },
-  gateHint: { textAlign: 'center', fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.6, marginTop: 6 },
+  mangaWrap: { marginHorizontal: 16, marginBottom: 14, borderRadius: 10, overflow: 'hidden' },
   narration: { flexDirection: 'row', gap: 12, alignItems: 'center', padding: 10, borderTopWidth: 1, borderTopColor: theme.border, backgroundColor: theme.surface },
   narrNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: theme.text, alignItems: 'center', justifyContent: 'center' },
   narrNumText: { color: theme.bg, fontFamily: FONT.mono, fontSize: 12, fontWeight: '700' },
