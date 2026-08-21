@@ -1104,7 +1104,8 @@ const styles = StyleSheet.create({
   diagramBody: { aspectRatio: 320 / 260, backgroundColor: theme.surfaceAlt },
   // gate carousel
   mangaOuter: { alignItems: 'center', marginBottom: 14 },
-  mangaWrap: { borderRadius: 10, overflow: 'hidden', backgroundColor: theme.surface },
+  // 漫画は外枠の黒フチを画像自身が持っているため、角丸を付けるとフチが欠ける。
+  mangaWrap: { backgroundColor: theme.surface },
   mangaHint: { fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.6, marginTop: 8 },
   // 拡大表示
   fsBg: { flex: 1, backgroundColor: 'rgba(10,10,10,0.96)' },
