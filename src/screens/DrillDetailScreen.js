@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Easing, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Animated, Easing, Image, Modal, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Svg, { Path, Rect, Circle, Ellipse, Line, Text as SvgText, G, Polygon, LinearGradient, Defs, Stop, ClipPath } from 'react-native-svg';
@@ -20,18 +20,54 @@ const DRILL_MANGA = {
 };
 const MANGA_AR = 1122 / 1402;   // 縦長 4:5
 
+// 一覧では全体像が掴めれば十分なので控えめに置き、細部はタップして拡大させる。
+// 4:5 の縦長を画面に収めても大して大きくならないため、拡大側は ScrollView の
+// ピンチズームに載せて任意の倍率で見られるようにしている。
+const MANGA_INLINE_MAX_H = 360;
+
 function DrillManga({ source }) {
-  // aspectRatio は必ず親の View に持たせ、Image は 100% x 100% で埋めること。
-  // Image に width:'100%' + aspectRatio を直接指定すると、静的アセットが持つ
-  // 固有の高さ(1402pt)が残って 3 倍の高さで描画される。
+  const { width: winW, height: winH } = useWindowDimensions();
+  const [zoomed, setZoomed] = useState(false);
+
+  // インライン表示: 高さ上限に収まる範囲で最大化
+  const w = Math.min(winW - 32, MANGA_INLINE_MAX_H * MANGA_AR);
+  const h = w / MANGA_AR;
+
+  // 拡大表示: 画面に収まるサイズ（ここからピンチで拡大できる）
+  const fsW = Math.min(winW, winH * MANGA_AR);
+  const fsH = fsW / MANGA_AR;
+
   return (
-    <View style={[styles.mangaWrap, { aspectRatio: MANGA_AR }]}>
-      <Image
-        source={source}
-        style={{ width: '100%', height: '100%' }}
-        resizeMode="contain"
-      />
-    </View>
+    <>
+      <Pressable onPress={() => setZoomed(true)} style={styles.mangaOuter}>
+        {/* aspectRatio を Image に直接指定すると静的アセットの固有高さ(1402pt)が
+            残って3倍の高さで描画される。必ず親で寸法を決めること。 */}
+        <View style={[styles.mangaWrap, { width: w, height: h }]}>
+          <Image source={source} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+        </View>
+        <Text style={styles.mangaHint}>タップで拡大</Text>
+      </Pressable>
+
+      <Modal visible={zoomed} transparent animationType="fade" onRequestClose={() => setZoomed(false)}>
+        <View style={styles.fsBg}>
+          <ScrollView
+            minimumZoomScale={1}
+            maximumZoomScale={4}
+            centerContent
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.fsContent}
+          >
+            <Image source={source} style={{ width: fsW, height: fsH }} resizeMode="contain" />
+          </ScrollView>
+          <Pressable onPress={() => setZoomed(false)} hitSlop={14} style={styles.fsClose}>
+            <Svg width={22} height={22} viewBox="0 0 24 24">
+              <Path d="M6 6L18 18M18 6L6 18" stroke="#fff" strokeWidth={2} strokeLinecap="round" />
+            </Svg>
+          </Pressable>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -1067,7 +1103,13 @@ const styles = StyleSheet.create({
   diagramWrap: { marginHorizontal: 16, marginBottom: 12, borderWidth: 1, borderColor: theme.border, borderRadius: 8, overflow: 'hidden', backgroundColor: theme.surface },
   diagramBody: { aspectRatio: 320 / 260, backgroundColor: theme.surfaceAlt },
   // gate carousel
-  mangaWrap: { marginHorizontal: 16, marginBottom: 14, borderRadius: 10, overflow: 'hidden' },
+  mangaOuter: { alignItems: 'center', marginBottom: 14 },
+  mangaWrap: { borderRadius: 10, overflow: 'hidden', backgroundColor: theme.surface },
+  mangaHint: { fontFamily: FONT.mono, fontSize: 10, color: theme.textTer, letterSpacing: 0.6, marginTop: 8 },
+  // 拡大表示
+  fsBg: { flex: 1, backgroundColor: 'rgba(10,10,10,0.96)' },
+  fsContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
+  fsClose: { position: 'absolute', top: 56, right: 20, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' },
   narration: { flexDirection: 'row', gap: 12, alignItems: 'center', padding: 10, borderTopWidth: 1, borderTopColor: theme.border, backgroundColor: theme.surface },
   narrNum: { width: 28, height: 28, borderRadius: 14, backgroundColor: theme.text, alignItems: 'center', justifyContent: 'center' },
   narrNumText: { color: theme.bg, fontFamily: FONT.mono, fontSize: 12, fontWeight: '700' },
