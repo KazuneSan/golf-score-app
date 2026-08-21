@@ -21,11 +21,14 @@ const DRILL_MANGA = {
 const MANGA_AR = 1122 / 1402;   // 縦長 4:5
 
 function DrillManga({ source }) {
+  // aspectRatio は必ず親の View に持たせ、Image は 100% x 100% で埋めること。
+  // Image に width:'100%' + aspectRatio を直接指定すると、静的アセットが持つ
+  // 固有の高さ(1402pt)が残って 3 倍の高さで描画される。
   return (
-    <View style={styles.mangaWrap}>
+    <View style={[styles.mangaWrap, { aspectRatio: MANGA_AR }]}>
       <Image
         source={source}
-        style={{ width: '100%', aspectRatio: MANGA_AR }}
+        style={{ width: '100%', height: '100%' }}
         resizeMode="contain"
       />
     </View>
