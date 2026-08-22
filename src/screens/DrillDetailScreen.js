@@ -15,8 +15,12 @@ const theme = THEMES.light;
 // ── ドリル解説漫画（4コマ・1ドリル1枚）──
 // 生成方法と守るべきルールは Notion「イラスト発注仕様」を参照。
 // 画像は 1122 × 1402 (4:5) で ChatGPT が出力したものを WebP 変換して同梱する。
+// キーは drillDetails.js の DRILL_DETAILS の id と一致させること。
+// 追加は scripts/import_drill_manga.py が出力する行をそのまま貼る。
 const DRILL_MANGA = {
-  p1: require('../../assets/drills/gate-drill.webp'),
+  p1:  require('../../assets/drills/p1.webp'),
+  ob1: require('../../assets/drills/ob1.webp'),
+  ob2: require('../../assets/drills/ob2.webp'),
 };
 const MANGA_AR = 1122 / 1402;   // 縦長 4:5
 
